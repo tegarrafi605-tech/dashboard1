@@ -8,6 +8,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -37,7 +39,7 @@
                 PISAlyze
             </h1>
             <p class="text-lg md:text-2xl text-gray-300 mb-10 font-light leading-relaxed">
-                Portal Analisis Data Pendidikan Nasional. Eksplorasi mendalam metrik Matematika, Sains, dan Literasi dari database OECD.
+                Portal Analisis Data Pendidikan Nasional. Eksplorasi mendalam metrik Matematika, Sains, dan Literasi dari database OECD dengan sistem pembersihan data otomatis.
             </p>
             <a href="#dashboard" class="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(37,99,235,0.4)]">
                 Lihat Dashboard <i data-lucide="arrow-down" class="w-5 h-5 animate-bounce"></i>
@@ -86,8 +88,8 @@
         <!-- LOADING INDICATOR -->
         <div id="loadingSpinner" class="hidden flex-col items-center justify-center py-20">
             <i data-lucide="loader-2" class="w-12 h-12 text-purple-500 animate-spin mb-4"></i>
-            <h3 class="text-xl font-bold text-gray-200">Menarik Data...</h3>
-            <p class="text-gray-400 mt-2 text-sm">Engine sedang memproses file Excel.</p>
+            <h3 class="text-xl font-bold text-gray-200">Menarik & Membersihkan Data...</h3>
+            <p class="text-gray-400 mt-2 text-sm">Strict Filter Engine sedang bekerja membuang baris teks sampah.</p>
         </div>
 
         <!-- ERROR MESSAGE -->
@@ -96,7 +98,7 @@
             <p class="mt-2 text-gray-300" id="errorText">File tidak ditemukan.</p>
         </div>
 
-        <!-- DASHBOARD CONTENT (Cards + Table) -->
+        <!-- DASHBOARD CONTENT (Cards + Chart + Table) -->
         <div id="dashboardContent" class="hidden flex-col gap-8">
             
             <!-- SUMMARY CARDS -->
@@ -124,6 +126,16 @@
                     <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i data-lucide="users" class="w-16 h-16"></i></div>
                     <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Total Peserta</h4>
                     <div class="text-4xl font-bold text-purple-400 mt-2 font-mono" id="cardTotal">-</div>
+                </div>
+            </div>
+
+            <!-- DYNAMIC CHART SECTION -->
+            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl">
+                <h3 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-4 flex items-center gap-2">
+                    <i data-lucide="bar-chart-2"></i> Top 10 Negara
+                </h3>
+                <div class="w-full h-72">
+                    <canvas id="dynamicChart"></canvas>
                 </div>
             </div>
 
@@ -161,16 +173,15 @@
         let filteredData = [];
         let targetMetricCol = null;
         let maxValueGlobal = 0;
+        let myChart = null;
 
         let currentSortCol = null;
         let currentSortAsc = true;
 
-        // Initialize App
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
             loadCategory('Matematika');
             
-            // Search Listener
             document.getElementById('searchInput').addEventListener('keyup', (e) => {
                 applyFiltersAndSort();
             });
@@ -217,6 +228,34 @@
                 });
 
                 if(workbook.SheetNames.length > 0) {
+                    // AUTO-SELECT VALID SHEET
+                    let defaultSheet = null;
+                    for(let i=0; i<workbook.SheetNames.length; i++) {
+                        let sheetName = workbook.SheetNames[i];
+                        if(sheetName.toLowerCase() !== 'toc') {
+                            // Cek apakah sheet ini punya data numerik
+                            let worksheet = workbook.Sheets[sheetName];
+                            let raw = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                            // Strict check: if there's any row with numbers
+                            let hasNumbers = false;
+                            for(let j=0; j<Math.min(20, raw.length); j++) {
+                                let keys = Object.keys(raw[j]);
+                                for(let k of keys) {
+                                    if(typeof raw[j][k] === 'number') {
+                                        hasNumbers = true;
+                                        break;
+                                    }
+                                }
+                                if(hasNumbers) break;
+                            }
+                            if(hasNumbers) {
+                                defaultSheet = sheetName;
+                                break;
+                            }
+                        }
+                    }
+                    if(!defaultSheet) defaultSheet = workbook.SheetNames[0];
+                    selector.value = defaultSheet;
                     changeSheet();
                 }
 
@@ -243,15 +282,45 @@
             const worksheet = workbook.Sheets[sheetName];
             let rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
             
-            // Garbage Filtering
+            // 1. Identify Target Metric Column first
+            targetMetricCol = null;
             if(rawData.length > 0) {
-                const firstKey = Object.keys(rawData[0])[0];
+                const keys = Object.keys(rawData[0]);
+                let scoresByCol = {};
+                keys.forEach(k => scoresByCol[k] = 0);
+
+                rawData.forEach(row => {
+                    keys.forEach(k => {
+                        if (!isNaN(parseFloat(row[k])) && String(row[k]).trim() !== "") {
+                            scoresByCol[k]++;
+                        }
+                    });
+                });
+
+                let maxNumbers = 0;
+                keys.forEach(k => {
+                    if (scoresByCol[k] > maxNumbers) {
+                        maxNumbers = scoresByCol[k];
+                        targetMetricCol = k;
+                    }
+                });
+            }
+
+            // 2. Strict Garbage Filtering
+            if(rawData.length > 0 && targetMetricCol) {
+                const countryKey = Object.keys(rawData[0])[0];
                 currentData = rawData.filter(row => {
-                    const val = String(row[firstKey] || '').trim();
-                    const valLower = val.toLowerCase();
+                    const countryVal = String(row[countryKey] || '').trim();
+                    const valLower = countryVal.toLowerCase();
                     
-                    if(val === "" || valLower === "undefined" || valLower === "null") return false;
+                    if(countryVal === "" || valLower === "undefined" || valLower === "null") return false;
                     if(valLower === 'empty' || valLower === 'unknown' || valLower.includes('oecd average')) return false;
+                    if(valLower === 'toc' || valLower.includes('table ') || valLower.includes('figure ')) return false;
+                    if(countryVal.length > 40) return false; // Likely a paragraph or title row
+
+                    // Strict Numeric check
+                    const metricVal = row[targetMetricCol];
+                    if(metricVal === "" || isNaN(parseFloat(metricVal))) return false;
                     
                     return true;
                 });
@@ -259,8 +328,16 @@
                 currentData = [];
             }
             
-            // Identify target metric column for Progress Bar & Summaries
-            identifyMetricColumn(currentData);
+            // 3. Find Max Value for Progress Bars
+            maxValueGlobal = 0;
+            if(targetMetricCol) {
+                currentData.forEach(row => {
+                    let val = parseFloat(row[targetMetricCol]);
+                    if(!isNaN(val) && val > maxValueGlobal) {
+                        maxValueGlobal = val;
+                    }
+                });
+            }
 
             // Reset States
             currentSortCol = null;
@@ -269,30 +346,6 @@
 
             updateSummaryCards(currentData);
             applyFiltersAndSort();
-        }
-
-        function identifyMetricColumn(data) {
-            targetMetricCol = null;
-            maxValueGlobal = 0;
-            if(data.length === 0) return;
-
-            const keys = Object.keys(data[0]);
-            for(let key of keys) {
-                const isNumeric = data.some(row => typeof row[key] === 'number' || (!isNaN(parseFloat(row[key])) && row[key] !== ""));
-                if(isNumeric) {
-                    targetMetricCol = key;
-                    break;
-                }
-            }
-
-            if(targetMetricCol) {
-                data.forEach(row => {
-                    let val = parseFloat(row[targetMetricCol]);
-                    if(!isNaN(val) && val > maxValueGlobal) {
-                        maxValueGlobal = val;
-                    }
-                });
-            }
         }
 
         function formatNumber(num) {
@@ -349,6 +402,58 @@
             cTotal.innerText = data.length;
         }
 
+        function renderChart(data) {
+            if(myChart) myChart.destroy();
+            if(data.length === 0 || !targetMetricCol) return;
+
+            // Sort data descending to get top 10 for chart
+            const chartData = [...data].sort((a, b) => {
+                return parseFloat(b[targetMetricCol] || 0) - parseFloat(a[targetMetricCol] || 0);
+            }).slice(0, 10);
+
+            const countryKey = Object.keys(data[0])[0];
+            const labels = chartData.map(row => row[countryKey] || 'Unknown');
+            const values = chartData.map(row => parseFloat(row[targetMetricCol]) || 0);
+
+            const ctx = document.getElementById('dynamicChart').getContext('2d');
+            
+            // Gradient fill for bars
+            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(147, 51, 234, 0.8)'); // Purple
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.8)'); // Blue
+
+            myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: targetMetricCol,
+                        data: values,
+                        backgroundColor: gradient,
+                        borderRadius: 6,
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: { 
+                            grid: { color: '#374151' }, 
+                            ticks: { color: '#9ca3af' } 
+                        },
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { color: '#9ca3af', maxRotation: 45, minRotation: 45 } 
+                        }
+                    }
+                }
+            });
+        }
+
         function applyFiltersAndSort() {
             const query = document.getElementById('searchInput').value.toLowerCase();
             filteredData = currentData;
@@ -376,9 +481,16 @@
                     if (valA > valB) return currentSortAsc ? 1 : -1;
                     return 0;
                 });
+            } else if(targetMetricCol && !query) {
+                // Default sort: highest score first
+                filteredData.sort((a, b) => {
+                    return parseFloat(b[targetMetricCol] || 0) - parseFloat(a[targetMetricCol] || 0);
+                });
             }
 
             renderTableHTML(filteredData);
+            if(!query) renderChart(filteredData); // update chart only if no search filter applied, or update it always? Up to design. Let's update it always.
+            renderChart(filteredData);
         }
 
         function renderTableHTML(data) {
@@ -394,7 +506,7 @@
                         <td class="p-10 text-center text-gray-400" colspan="100%">
                             <div class="flex flex-col items-center justify-center">
                                 <i data-lucide="search-x" class="w-12 h-12 text-gray-600 mb-3"></i>
-                                <p class="text-lg">Negara tidak ditemukan dalam kategori ini.</p>
+                                <p class="text-lg">Data tidak ditemukan.</p>
                             </div>
                         </td>
                     </tr>`;
@@ -402,7 +514,11 @@
                 return;
             }
 
-            const keys = Object.keys(data[0]);
+            // Exclude empty columns that might be left over
+            const allKeys = Object.keys(data[0]);
+            // Only keep keys that actually have values in at least one row
+            const keys = allKeys.filter(k => data.some(row => row[k] !== undefined && row[k] !== ""));
+
             const trHead = document.createElement('tr');
             
             keys.forEach(key => {
@@ -442,11 +558,11 @@
             });
             thead.appendChild(trHead);
 
-            data.forEach(row => {
+            data.forEach((row, index) => {
                 const tr = document.createElement('tr');
                 tr.className = 'hover:bg-gray-800/60 transition group relative';
                 
-                keys.forEach(key => {
+                keys.forEach((key, colIndex) => {
                     const td = document.createElement('td');
                     td.className = 'p-4 relative z-10';
                     
