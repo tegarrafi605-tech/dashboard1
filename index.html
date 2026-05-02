@@ -28,7 +28,7 @@
             <!-- DROPDOWN SHEET -->
             <div class="flex items-center gap-2">
                 <label for="sheetSelector" class="text-sm text-gray-400">Pilih Sheet:</label>
-                <select id="sheetSelector" onchange="changeSheet()" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-64 p-2">
+                <select id="sheetSelector" onchange="changeSheet()" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-64 p-2 outline-none">
                     <option value="">Memuat data...</option>
                 </select>
             </div>
@@ -39,8 +39,8 @@
                 <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
                     <i data-lucide="search" class="w-4 h-4"></i>
                 </span>
-                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari data..." 
-                       class="w-full bg-gray-700 border-none rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:ring-blue-500 text-sm outline-none text-white">
+                <input type="text" id="searchInput" oninput="applyFiltersAndSort()" placeholder="Cari instan (real-time)..." 
+                       class="w-full bg-gray-700 border-none rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:ring-blue-500 text-sm outline-none text-white transition">
             </div>
         </div>
     </header>
@@ -60,11 +60,28 @@
             <p class="text-sm mt-1" id="errorText">Pastikan file 'DATA PISA MATEMATIKA1.xlsx' ada di folder yang sama.</p>
         </div>
 
-        <!-- DIAGRAM CARDS -->
+        <!-- DASHBOARD CONTENT -->
         <div id="dashboardContent" class="hidden flex-col gap-6">
-            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+            
+            <!-- SUMMARY CARDS -->
+            <div id="summaryCards" class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <h4 class="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2"><i data-lucide="trending-up" class="w-4 h-4"></i> Skor Tertinggi</h4>
+                    <div class="text-3xl font-bold text-green-400" id="statHigh">-</div>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <h4 class="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2"><i data-lucide="trending-down" class="w-4 h-4"></i> Skor Terendah</h4>
+                    <div class="text-3xl font-bold text-red-400" id="statLow">-</div>
+                </div>
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
+                    <h4 class="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4"></i> Rata-Rata</h4>
+                    <div class="text-3xl font-bold text-blue-400" id="statAvg">-</div>
+                </div>
+            </div>
+
+            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
                 <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <i data-lucide="bar-chart-2" class="text-green-400"></i> Visualisasi Data (Top 10)
+                    <i data-lucide="bar-chart-2" class="text-purple-400"></i> Visualisasi Data (Top 10)
                 </h3>
                 <div class="w-full h-64">
                     <canvas id="dynamicChart"></canvas>
@@ -72,13 +89,13 @@
             </div>
 
             <!-- DYNAMIC TABLE -->
-            <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+            <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg flex flex-col">
                 <div class="p-4 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
                     <h3 class="text-lg font-semibold" id="tableTitle">Data Tabel</h3>
                 </div>
-                <div class="overflow-x-auto max-h-[500px]">
+                <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
                     <table class="w-full text-left border-collapse whitespace-nowrap">
-                        <thead class="bg-gray-700/50 text-gray-400 text-xs uppercase sticky top-0 z-10" id="tableHead">
+                        <thead class="bg-gray-700 text-gray-300 text-xs uppercase sticky top-0 z-10 shadow-md" id="tableHead">
                             <!-- Header generated dynamically -->
                         </thead>
                         <tbody class="text-sm divide-y divide-gray-700" id="tableBody">
@@ -94,6 +111,10 @@
         let workbook = null;
         let currentData = [];
         let myChart = null;
+        
+        // State for sorting
+        let currentSortCol = null;
+        let currentSortAsc = true;
 
         async function init() {
             document.getElementById('loadingIndicator').classList.remove('hidden');
@@ -107,18 +128,16 @@
                 const arrayBuffer = await response.arrayBuffer();
                 workbook = XLSX.read(arrayBuffer, { type: 'array' });
                 
-                // Populate Dropdown
                 const selector = document.getElementById('sheetSelector');
-                selector.innerHTML = ''; // clear options
+                selector.innerHTML = ''; 
                 
-                workbook.SheetNames.forEach((sheetName, index) => {
+                workbook.SheetNames.forEach((sheetName) => {
                     const option = document.createElement('option');
                     option.value = sheetName;
                     option.textContent = sheetName;
                     selector.appendChild(option);
                 });
 
-                // Load first sheet by default
                 if(workbook.SheetNames.length > 0) {
                     changeSheet();
                 }
@@ -131,7 +150,7 @@
                 console.error("Error loading excel:", error);
                 document.getElementById('loadingIndicator').classList.add('hidden');
                 document.getElementById('errorMessage').classList.remove('hidden');
-                document.getElementById('errorText').innerText = "Gagal memuat file 'DATA PISA MATEMATIKA1.xlsx'. Jika Anda mengakses via GitHub Pages, pastikan file tersebut sudah di-upload ke repository. (Error: " + error.message + ")";
+                document.getElementById('errorText').innerText = "Gagal memuat file 'DATA PISA MATEMATIKA1.xlsx'. Pastikan file sudah berada di GitHub / Folder yang sama. (Error: " + error.message + ")";
             }
         }
 
@@ -142,14 +161,132 @@
             document.getElementById('tableTitle').innerText = `Data Sheet: ${sheetName}`;
             
             const worksheet = workbook.Sheets[sheetName];
-            // Convert to JSON array of objects
-            currentData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+            let rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
             
-            renderTable(currentData);
+            // 5. Hapus Baris Kosong (Jika kolom pertama kosong)
+            if(rawData.length > 0) {
+                const firstKey = Object.keys(rawData[0])[0];
+                currentData = rawData.filter(row => {
+                    const val = String(row[firstKey]).trim();
+                    return val !== "" && val.toLowerCase() !== "empty" && val !== "undefined";
+                });
+            } else {
+                currentData = [];
+            }
+            
+            // Reset sort when changing sheet
+            currentSortCol = null;
+            currentSortAsc = true;
+            document.getElementById('searchInput').value = '';
+
+            updateSummaryCards(currentData);
+            applyFiltersAndSort();
             renderChart(currentData);
         }
 
-        function renderTable(data) {
+        // 4. Summary Cards Calculation
+        function updateSummaryCards(data) {
+            const statHigh = document.getElementById('statHigh');
+            const statLow = document.getElementById('statLow');
+            const statAvg = document.getElementById('statAvg');
+
+            if(data.length === 0) {
+                statHigh.innerText = '-';
+                statLow.innerText = '-';
+                statAvg.innerText = '-';
+                return;
+            }
+
+            // Cari kolom angka pertama untuk dijadikan patokan metrik
+            const keys = Object.keys(data[0]);
+            let targetKey = null;
+            for(let key of keys) {
+                const isNumeric = data.some(row => typeof row[key] === 'number' || (!isNaN(parseFloat(row[key])) && row[key] !== ""));
+                if(isNumeric) {
+                    targetKey = key;
+                    break;
+                }
+            }
+
+            if(!targetKey) {
+                statHigh.innerText = 'N/A';
+                statLow.innerText = 'N/A';
+                statAvg.innerText = 'N/A';
+                return;
+            }
+
+            let max = -Infinity;
+            let min = Infinity;
+            let sum = 0;
+            let count = 0;
+
+            data.forEach(row => {
+                let val = parseFloat(row[targetKey]);
+                if(!isNaN(val)) {
+                    if(val > max) max = val;
+                    if(val < min) min = val;
+                    sum += val;
+                    count++;
+                }
+            });
+
+            if(count > 0) {
+                const avg = sum / count;
+                // 1. Pembulatan Angka (1 angka di belakang koma)
+                statHigh.innerText = formatNumber(max);
+                statLow.innerText = formatNumber(min);
+                statAvg.innerText = formatNumber(avg);
+            } else {
+                statHigh.innerText = '-';
+                statLow.innerText = '-';
+                statAvg.innerText = '-';
+            }
+        }
+
+        // 1. Pembulatan 1 desimal
+        function formatNumber(num) {
+            if(typeof num !== 'number') return num;
+            return (num % 1 !== 0) ? num.toFixed(1) : num;
+        }
+
+        // 2 & 3. Search Pintar dan Sorting Otomatis
+        function applyFiltersAndSort() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            let filteredData = currentData;
+
+            // Apply Search Filter (Real-time)
+            if(query) {
+                filteredData = currentData.filter(row => {
+                    return Object.values(row).some(val => String(val).toLowerCase().includes(query));
+                });
+            }
+
+            // Apply Sorting
+            if(currentSortCol) {
+                filteredData.sort((a, b) => {
+                    let valA = a[currentSortCol];
+                    let valB = b[currentSortCol];
+
+                    // Sort numeric if both are numbers
+                    let numA = parseFloat(valA);
+                    let numB = parseFloat(valB);
+                    if(!isNaN(numA) && !isNaN(numB) && valA !== "" && valB !== "") {
+                        return currentSortAsc ? numA - numB : numB - numA;
+                    }
+
+                    // String sorting
+                    valA = String(valA || '').toLowerCase();
+                    valB = String(valB || '').toLowerCase();
+                    if (valA < valB) return currentSortAsc ? -1 : 1;
+                    if (valA > valB) return currentSortAsc ? 1 : -1;
+                    return 0;
+                });
+            }
+
+            renderTableHTML(filteredData);
+        }
+
+        function renderTableHTML(data) {
             const thead = document.getElementById('tableHead');
             const tbody = document.getElementById('tableBody');
             
@@ -157,17 +294,51 @@
             tbody.innerHTML = '';
 
             if(data.length === 0) {
-                tbody.innerHTML = '<tr><td class="p-4 text-center text-gray-400">Tidak ada data di sheet ini.</td></tr>';
+                tbody.innerHTML = '<tr><td class="p-4 text-center text-gray-400" colspan="100%">Tidak ada data yang cocok.</td></tr>';
                 return;
             }
 
-            // Generate Headers
             const keys = Object.keys(data[0]);
             const trHead = document.createElement('tr');
+            
+            // Generate Headers with Sorting Logic
             keys.forEach(key => {
                 const th = document.createElement('th');
-                th.className = 'p-4 font-semibold tracking-wide';
-                th.textContent = key;
+                th.className = 'p-4 font-semibold tracking-wide cursor-pointer hover:text-white hover:bg-gray-600 transition group select-none';
+                
+                const flexDiv = document.createElement('div');
+                flexDiv.className = 'flex items-center gap-1';
+                
+                const span = document.createElement('span');
+                span.textContent = key;
+                flexDiv.appendChild(span);
+
+                // Sorting Icons
+                if (currentSortCol === key) {
+                    const icon = document.createElement('i');
+                    icon.setAttribute('data-lucide', currentSortAsc ? 'chevron-up' : 'chevron-down');
+                    icon.className = 'w-4 h-4 text-blue-400';
+                    flexDiv.appendChild(icon);
+                } else {
+                    const icon = document.createElement('i');
+                    icon.setAttribute('data-lucide', 'chevrons-up-down');
+                    icon.className = 'w-4 h-4 text-gray-500 opacity-0 group-hover:opacity-100 transition';
+                    flexDiv.appendChild(icon);
+                }
+
+                th.appendChild(flexDiv);
+
+                // Click event for sorting
+                th.onclick = () => {
+                    if (currentSortCol === key) {
+                        currentSortAsc = !currentSortAsc; // toggle
+                    } else {
+                        currentSortCol = key;
+                        currentSortAsc = true; // default ascending
+                    }
+                    applyFiltersAndSort();
+                };
+
                 trHead.appendChild(th);
             });
             thead.appendChild(trHead);
@@ -175,46 +346,43 @@
             // Generate Rows
             data.forEach(row => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-700/30 transition';
+                tr.className = 'hover:bg-gray-700/50 transition';
                 keys.forEach(key => {
                     const td = document.createElement('td');
                     td.className = 'p-4';
-                    td.textContent = row[key];
+                    
+                    // 1. Pembulatan Angka saat rendering
+                    let val = row[key];
+                    if (typeof val === 'number') {
+                        val = formatNumber(val);
+                    } else if (typeof val === 'string' && val.trim() !== '' && !isNaN(val)) {
+                        let parsed = parseFloat(val);
+                        if (!isNaN(parsed)) val = formatNumber(parsed);
+                    }
+                    
+                    td.textContent = val;
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
             });
-        }
 
-        function filterTable() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            if(!currentData) return;
-
-            const filteredData = currentData.filter(row => {
-                return Object.values(row).some(val => 
-                    String(val).toLowerCase().includes(query)
-                );
-            });
-            renderTable(filteredData);
+            lucide.createIcons();
         }
 
         function renderChart(data) {
             if(myChart) myChart.destroy();
             if(data.length === 0) return;
 
-            // Simple heuristic to find a label column (first string column) and a data column (first number column)
             const keys = Object.keys(data[0]);
-            let labelKey = keys[0]; // default to first column
+            let labelKey = keys[0]; 
             let dataKeys = [];
 
-            // Find all columns that have numbers in the first row
             keys.forEach(key => {
                 if(typeof data[0][key] === 'number') {
                     dataKeys.push(key);
                 }
             });
 
-            // If no pure numbers found, try to find columns where values can be parsed as numbers
             if (dataKeys.length === 0 && data.length > 0) {
                 keys.forEach(key => {
                      const val = parseFloat(data[0][key]);
@@ -222,7 +390,6 @@
                 });
             }
 
-            // Take top 10 for chart to avoid clutter
             const chartData = data.slice(0, 10);
             const labels = chartData.map(row => row[labelKey] || 'Unknown');
             
@@ -230,7 +397,6 @@
             const colors = ['#60a5fa', '#f87171', '#34d399', '#fbbf24', '#a78bfa'];
 
             if (dataKeys.length > 0) {
-                // Plot up to 3 numeric columns
                 dataKeys.slice(0, 3).forEach((key, index) => {
                     datasets.push({
                         label: key,
@@ -241,9 +407,8 @@
                     });
                 });
             } else {
-                // Dummy dataset if no numbers found
                 datasets.push({
-                    label: 'No Numeric Data Found',
+                    label: 'Tidak ada metrik angka',
                     data: chartData.map(() => 0)
                 });
             }
