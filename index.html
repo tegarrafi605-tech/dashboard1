@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PISA Educational Dashboard</title>
+    <!-- Tailwind CSS untuk desain modern & responsif -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js untuk visualisasi diagram -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons untuk ikon yang bersih -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS untuk membaca file Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        .modal {
+            transition: opacity 0.25s ease;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-900 text-gray-100 flex h-screen overflow-hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="w-64 bg-gray-800 border-r border-gray-700 flex-shrink-0 hidden md:flex flex-col">
+        <div class="p-6">
+            <h1 class="text-xl font-bold text-blue-400 flex items-center gap-2">
+                <i data-lucide="layout-dashboard"></i> PISA-DB
+            </h1>
+        </div>
+        <nav class="flex-1 px-4 space-y-2">
+            <a href="#" id="menu-dashboard" onclick="navigate('dashboard')"
+                class="nav-item flex items-center gap-3 p-3 bg-blue-600 text-white rounded-lg transition"><i
+                    data-lucide="home"></i> Dashboard</a>
+            <a href="#" id="menu-data-pisa" onclick="navigate('data-pisa')"
+                class="nav-item flex items-center gap-3 p-3 hover:bg-gray-700 text-gray-400 rounded-lg transition"><i
+                    data-lucide="database"></i> Data PISA</a>
+            <a href="#" id="menu-analisis" onclick="navigate('analisis')"
+                class="nav-item flex items-center gap-3 p-3 hover:bg-gray-700 text-gray-400 rounded-lg transition"><i
+                    data-lucide="pie-chart"></i> Analisis</a>
+            <a href="#" id="menu-pengaturan" onclick="navigate('pengaturan')"
+                class="nav-item flex items-center gap-3 p-3 hover:bg-gray-700 text-gray-400 rounded-lg transition"><i
+                    data-lucide="settings"></i> Pengaturan</a>
+        </nav>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col overflow-y-auto">
+        <!-- TOPBAR & SEARCH -->
+        <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center sticky top-0 z-10">
+            <div class="relative w-96">
+                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                </span>
+                <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Cari negara atau status..."
+                    class="w-full bg-gray-700 border-none rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:ring-blue-500 text-sm outline-none">
+            </div>
+            <div class="flex items-center gap-4">
+                <span id="displayUserName" class="text-sm text-gray-400">Tegar Rafi H.</span>
+                <div id="displayUserInitials"
+                    class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-xs font-bold text-white">
+                    TR</div>
+            </div>
+        </header>
+
+        <div class="p-6 space-y-6">
+            <!-- SECTION: DIAGRAM CARDS -->
+            <div id="diagram-section" class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Line Chart: Tren Matematika -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="trending-up" class="text-green-400"></i> Tren Rata-rata Skor Matematika (OECD)
+                    </h3>
+                    <canvas id="lineChart" height="200"></canvas>
+                </div>
+                <!-- Pie Chart: Alokasi Waktu Siswa -->
+                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <i data-lucide="clock" class="text-yellow-400"></i> Alokasi Waktu Siswa per Hari (Hours)
+                    </h3>
+                    <div class="max-w-[300px] mx-auto">
+                        <canvas id="pieChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECTION: RAW DATA TABLE -->
+            <div id="table-section" class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden">
+                <div class="p-6 border-b border-gray-700 flex justify-between items-center">
+                    <h3 class="text-lg font-semibold">Data Negara PISA 2022</h3>
+                    <span class="bg-blue-900 text-blue-300 px-3 py-1 rounded-full text-xs font-medium">Source: OECD
+                        Database</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse" id="pisaTable">
+                        <thead class="bg-gray-700/50 text-gray-400 text-xs uppercase">
+                            <tr>
+                                <th class="p-4">Negara</th>
+                                <th class="p-4">Skor Matematika</th>
+                                <th class="p-4">Status Performa</th>
+                                <th class="p-4 text-center">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-sm divide-y divide-gray-700" id="tableBody">
+                            <!-- Data akan diisi oleh JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- SECTION: ANALISIS -->
+            <div id="analisis-section"
+                class="hidden bg-gray-800 p-10 rounded-xl border border-gray-700 flex flex-col items-center justify-center text-center">
+                <i data-lucide="construction" class="w-16 h-16 text-yellow-500 mb-4"></i>
+                <h2 class="text-2xl font-bold text-gray-100">Halaman Analisis Data PISA</h2>
+                <p class="text-gray-400 mt-2">Sedang dalam pengembangan. Silakan kembali lagi nanti.</p>
+            </div>
+
+            <!-- SECTION: PENGATURAN -->
+            <div id="pengaturan-section"
+                class="hidden bg-gray-800 p-8 rounded-xl border border-gray-700 max-w-lg mx-auto mt-10">
+                <h2 class="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                    <i data-lucide="user"></i> Pengaturan Profil
+                </h2>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-1">Nama Lengkap</label>
+                        <input type="text" id="inputUserName" value="Tegar Rafi H."
+                            class="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <button onclick="saveUserName()"
+                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition">Simpan
+                        Perubahan</button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- MODAL (DRILL-DOWN) -->
+    <div id="detailModal"
+        class="modal fixed inset-0 bg-black/60 flex items-center justify-center z-50 opacity-0 pointer-events-none">
+        <div class="bg-gray-800 w-full max-w-md rounded-2xl p-8 border border-gray-700 shadow-2xl">
+            <div class="flex justify-between items-start mb-6">
+                <h2 id="modalTitle" class="text-2xl font-bold text-blue-400">Detail Negara</h2>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white"><i data-lucide="x"></i></button>
+            </div>
+            <div id="modalContent" class="space-y-4 text-gray-300">
+                <!-- Konten dinamis -->
+            </div>
+            <button onclick="closeModal()"
+                class="w-full mt-8 bg-blue-600 py-3 rounded-lg font-semibold hover:bg-blue-700 transition">Tutup</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. DATA (Akan diisi dari Excel)
+        let pisaData = [];
+        let myLineChart = null;
+
+        // Fungsi untuk membaca file Excel (DATA PISA MATEMATIKA1.xlsx)
+        async function loadExcelData() {
+            try {
+                // Membaca file menggunakan fetch
+                const response = await fetch('DATA PISA MATEMATIKA1.xlsx');
+                if (!response.ok) throw new Error("File tidak ditemukan atau tidak bisa diakses");
+
+                const arrayBuffer = await response.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+
+                const rawData = XLSX.utils.sheet_to_json(worksheet);
+
+                // Mapping data dinamis sesuai struktur Excel
+                pisaData = rawData.map(row => ({
+                    country: row.Negara || row.Country || "Unknown",
+                    score: row['Skor Matematika'] || row.Score || row.Skor || 0,
+                    status: row.Status || row['Status Performa'] || "Unknown",
+                    trend: [
+                        row['Skor 2015'] || row['2015'] || 0,
+                        row['Skor 2018'] || row['2018'] || 0,
+                        row['Skor 2022'] || row['2022'] || row['Skor Matematika'] || 0
+                    ],
+                    note: row.Catatan || row.Note || "-"
+                }));
+
+                renderTable(pisaData);
+                updateLineChart(pisaData);
+            } catch (error) {
+                console.error("Error memuat data Excel:", error);
+                // Beri peringatan tentang server lokal (CORS constraint)
+                alert("Gagal membaca file Excel. Pastikan file 'DATA PISA MATEMATIKA1.xlsx' berada di folder yang sama, dan Anda membuka file ini menggunakan Local Server (seperti VS Code Live Server), BUKAN sekadar double-click file (karena ada blokir keamanan browser CORS).");
+
+                // Fallback sementara
+                pisaData = [
+                    { country: "Singapura (Dummy Fallback)", score: 575, status: "Top Performer", trend: [569, 564, 575], note: "Gagal memuat Excel." },
+                    { country: "Indonesia (Dummy Fallback)", score: 366, status: "Low Performer", trend: [375, 379, 366], note: "Gagal memuat Excel." }
+                ];
+                renderTable(pisaData);
+                updateLineChart(pisaData);
+            }
+        }
+
+        // 2. LOGIKA DIAGRAM (Chart.js)
+        function updateLineChart(data) {
+            const lineCtx = document.getElementById('lineChart').getContext('2d');
+
+            if (myLineChart) myLineChart.destroy();
+
+            const datasets = [];
+            if (data.length > 0) {
+                datasets.push({
+                    label: 'Skor Matematika (' + data[0].country + ')',
+                    data: data[0].trend,
+                    borderColor: '#60a5fa',
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(96, 165, 250, 0.1)'
+                });
+            }
+            if (data.length > 1) {
+                datasets.push({
+                    label: 'Skor Matematika (' + data[1].country + ')',
+                    data: data[1].trend,
+                    borderColor: '#f87171',
+                    tension: 0.4
+                });
+            }
+
+            myLineChart = new Chart(lineCtx, {
+                type: 'line',
+                data: {
+                    labels: ['2015', '2018', '2022'],
+                    datasets: datasets
+                },
+                options: { plugins: { legend: { labels: { color: '#9ca3af' } } }, scales: { y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } }, x: { grid: { display: false }, ticks: { color: '#9ca3af' } } } }
+            });
+        }
+
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Belajar Sekolah', 'Belajar Mandiri', 'Bermain/Hobi', 'Lainnya'],
+                datasets: [{
+                    data: [6, 2.5, 4, 3.5],
+                    backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6366f1']
+                }]
+            },
+            options: { plugins: { legend: { position: 'bottom', labels: { color: '#9ca3af' } } } }
+        });
+
+        // 3. LOGIKA TABEL & SEARCH
+        const tableBody = document.getElementById('tableBody');
+        function renderTable(data) {
+            tableBody.innerHTML = data.map(item => `
+                <tr class="hover:bg-gray-700/30 transition">
+                    <td class="p-4 font-medium">${item.country}</td>
+                    <td class="p-4">${item.score}</td>
+                    <td class="p-4">
+                        <span class="px-2 py-1 rounded-md text-xs font-semibold ${getStatusClass(item.status)}">
+                            ${item.status}
+                        </span>
+                    </td>
+                    <td class="p-4 text-center">
+                        <button onclick="showDetail('${item.country}')" class="text-blue-400 hover:text-blue-300">
+                            <i data-lucide="info" class="w-5 h-5"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            lucide.createIcons();
+        }
+
+        function getStatusClass(status) {
+            if (status.includes('Top')) return 'bg-green-900 text-green-300';
+            if (status.includes('Low')) return 'bg-red-900 text-red-300';
+            return 'bg-blue-900 text-blue-300';
+        }
+
+        function filterTable() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = pisaData.filter(i => i.country.toLowerCase().includes(query) || i.status.toLowerCase().includes(query));
+            renderTable(filtered);
+        }
+
+        // 4. INTERAKTIF (MODAL DRILL-DOWN)
+        function showDetail(countryName) {
+            const item = pisaData.find(i => i.country === countryName);
+            document.getElementById('modalTitle').innerText = item.country;
+            document.getElementById('modalContent').innerHTML = `
+                <div class="p-4 bg-gray-700 rounded-lg border-l-4 border-blue-500">
+                    <p class="text-sm text-gray-400 uppercase font-bold">Skor PISA 2022</p>
+                    <p class="text-3xl font-bold text-white">${item.score} Poin</p>
+                </div>
+                <div class="space-y-2">
+                    <p><strong>Status:</strong> ${item.status}</p>
+                    <p><strong>Catatan:</strong> ${item.note}</p>
+                    <p class="text-xs text-gray-500 italic mt-4">Data ini merujuk pada analisis volume I (Mindsets & Mathematics) OECD 2025.</p>
+                </div>
+            `;
+            const modal = document.getElementById('detailModal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function closeModal() {
+            document.getElementById('detailModal').classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        // 5. NAVIGASI (CONDITIONAL RENDERING)
+        function navigate(view) {
+            // Reset semua nav items ke default style
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.className = "nav-item flex items-center gap-3 p-3 hover:bg-gray-700 text-gray-400 rounded-lg transition";
+            });
+
+            // Set nav item yang aktif ke warna biru terang
+            const activeMenu = document.getElementById('menu-' + view);
+            if (activeMenu) {
+                activeMenu.className = "nav-item flex items-center gap-3 p-3 bg-blue-600 text-white rounded-lg transition";
+            }
+
+            // Sembunyikan semua section
+            document.getElementById('diagram-section').classList.add('hidden');
+            document.getElementById('table-section').classList.add('hidden');
+            document.getElementById('analisis-section').classList.add('hidden');
+            document.getElementById('pengaturan-section').classList.add('hidden');
+
+            // Tampilkan section berdasarkan view
+            if (view === 'dashboard') {
+                document.getElementById('diagram-section').classList.remove('hidden');
+                document.getElementById('table-section').classList.remove('hidden');
+            } else if (view === 'data-pisa') {
+                document.getElementById('table-section').classList.remove('hidden');
+            } else if (view === 'analisis') {
+                document.getElementById('analisis-section').classList.remove('hidden');
+            } else if (view === 'pengaturan') {
+                document.getElementById('pengaturan-section').classList.remove('hidden');
+            }
+        }
+
+        // 6. GANTI NAMA USER
+        function saveUserName() {
+            const newName = document.getElementById('inputUserName').value;
+            if (newName.trim() !== '') {
+                document.getElementById('displayUserName').innerText = newName;
+
+                // Buat inisial (max 2 huruf)
+                const nameParts = newName.trim().split(' ');
+                let initials = nameParts[0].charAt(0).toUpperCase();
+                if (nameParts.length > 1) {
+                    initials += nameParts[1].charAt(0).toUpperCase();
+                }
+                document.getElementById('displayUserInitials').innerText = initials;
+
+                // Tambahkan feedback sederhana
+                alert('Nama berhasil diubah!');
+            }
+        }
+
+        // Initialize
+        loadExcelData();
+        lucide.createIcons();
+    </script>
+</body>
+
+</html>
