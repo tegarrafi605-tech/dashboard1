@@ -22,14 +22,6 @@
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
 
-    <!-- MINIMALIST NAVBAR -->
-    <nav class="w-full py-3 px-6 flex justify-end items-center border-b border-gray-800 bg-gray-900">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-sm shadow-[0_0_10px_rgba(147,51,234,0.5)]">TR</div>
-            <span class="text-sm font-medium text-gray-300">Tegar Rafi H.</span>
-        </div>
-    </nav>
-
     <main class="flex-1 p-6 md:p-10 max-w-[1400px] mx-auto w-full flex flex-col gap-8">
         
         <!-- HEADER ROW: TITLE & DUAL-DROPDOWN -->
@@ -184,12 +176,11 @@
                 }
             }
 
-            if(!selectedSheet && validSheets.length > 0) {
-                selectedSheet = validSheets[0]; // fallback if year not found
-            }
-
             if(!selectedSheet) {
-                alert("Tidak ada data valid yang ditemukan di file ini.");
+                alert(`Data untuk tahun ${targetYear} tidak ditemukan di dalam file ${categoryName}.`);
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                document.getElementById('dashboardContent').classList.add('hidden');
+                document.getElementById('subtitleText').innerHTML = `<span class="text-red-400">Data Tahun ${targetYear} tidak tersedia.</span>`;
                 return;
             }
 
