@@ -169,18 +169,18 @@
                 
                 if(hasNumbers) {
                     validSheets.push(sName);
-                    // Match sheet name with year if possible
-                    if(sName.includes(targetYear)) {
-                        selectedSheet = sName;
-                    }
                 }
             }
 
+            if(validSheets.length > 0) {
+                selectedSheet = validSheets[0]; // Ambil langsung sheet valid pertama
+            }
+
             if(!selectedSheet) {
-                alert(`Data untuk tahun ${targetYear} tidak ditemukan di dalam file ${categoryName}.`);
+                alert(`Tidak ada data angka yang valid di dalam file ${categoryName}.`);
                 document.getElementById('loadingIndicator').classList.add('hidden');
                 document.getElementById('dashboardContent').classList.add('hidden');
-                document.getElementById('subtitleText').innerHTML = `<span class="text-red-400">Data Tahun ${targetYear} tidak tersedia.</span>`;
+                document.getElementById('subtitleText').innerHTML = `<span class="text-red-400">Data tidak tersedia.</span>`;
                 return;
             }
 
