@@ -373,15 +373,7 @@
             keys.forEach((k, idx) => {
                 const th = document.createElement('th');
                 th.className = 'p-5 font-bold tracking-wider text-indigo-200/70 text-xs uppercase';
-                
-                // Override nama kolom khusus sesuai permintaan
-                let headerName = k;
-                if(idx === 1) headerName = "MATEMATIKA";
-                else if(idx === 2) headerName = "SAINS";
-                else if(idx === 3) headerName = "LITERASI";
-                else if(idx === 0) headerName = "NEGARA";
-
-                th.textContent = headerName;
+                th.textContent = k;
                 trH.appendChild(th);
                 
                 // Petakan warna jika kolom ini berisi angka
