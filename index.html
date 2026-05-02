@@ -3,127 +3,205 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PISA Educational Dashboard</title>
+    <title>PISAlyze - Portal Analisis Data Pendidikan Nasional</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
     <!-- SheetJS -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        /* Gradient Progress Bar Animation */
+        .progress-bar-fill {
+            transition: width 0.8s ease-out;
+            background: linear-gradient(90deg, rgba(147,51,234,0.6) 0%, rgba(59,130,246,0.6) 100%);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1f2937; }
+        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 flex flex-col h-screen overflow-hidden">
+<body class="bg-gray-900 text-gray-100 overflow-x-hidden">
 
-    <!-- TOPBAR -->
-    <header class="bg-gray-800 border-b border-gray-700 p-4 flex justify-between items-center z-10 flex-shrink-0">
-        <div class="flex items-center gap-4">
-            <h1 class="text-xl font-bold text-blue-400 flex items-center gap-2">
-                <i data-lucide="layout-dashboard"></i> PISA-DB
+    <!-- HERO SECTION -->
+    <section class="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-gray-900 to-blue-900 overflow-hidden">
+        <div class="absolute inset-0 bg-black/40"></div> <!-- Overlay -->
+        <div class="relative z-10 text-center px-6 max-w-4xl mx-auto">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-blue-300 text-sm font-semibold mb-6 backdrop-blur-md">
+                <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Data Valid PISA 2022
+            </div>
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
+                PISAlyze
             </h1>
-            <div class="h-6 w-px bg-gray-600 mx-2"></div>
-            <!-- DROPDOWN SHEET -->
-            <div class="flex items-center gap-2">
-                <label for="sheetSelector" class="text-sm text-gray-400">Pilih Sheet:</label>
-                <select id="sheetSelector" onchange="changeSheet()" class="bg-gray-700 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-64 p-2 outline-none">
-                    <option value="">Memuat data...</option>
-                </select>
-            </div>
+            <p class="text-lg md:text-2xl text-gray-300 mb-10 font-light leading-relaxed">
+                Portal Analisis Data Pendidikan Nasional. Eksplorasi mendalam metrik Matematika, Sains, dan Literasi dari database OECD.
+            </p>
+            <a href="#dashboard" class="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(37,99,235,0.4)]">
+                Lihat Dashboard <i data-lucide="arrow-down" class="w-5 h-5 animate-bounce"></i>
+            </a>
         </div>
         
-        <div class="flex items-center gap-4">
-            <div class="relative w-64">
-                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                    <i data-lucide="search" class="w-4 h-4"></i>
-                </span>
-                <input type="text" id="searchInput" oninput="applyFiltersAndSort()" placeholder="Cari instan (real-time)..." 
-                       class="w-full bg-gray-700 border-none rounded-lg py-2 pl-10 pr-4 focus:ring-2 focus:ring-blue-500 text-sm outline-none text-white transition">
+        <!-- Decorative Shapes -->
+        <div class="absolute top-1/4 left-10 w-72 h-72 bg-purple-600/20 rounded-full mix-blend-screen filter blur-[80px] animate-pulse"></div>
+        <div class="absolute bottom-1/4 right-10 w-96 h-96 bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] animate-pulse delay-75"></div>
+    </section>
+
+    <!-- DASHBOARD SECTION -->
+    <section id="dashboard" class="min-h-screen flex flex-col p-6 md:p-10 max-w-[1600px] mx-auto w-full">
+        
+        <!-- CATEGORY TABS & SEARCH -->
+        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 bg-gray-800/50 p-6 rounded-2xl border border-gray-700 backdrop-blur-sm">
+            <div class="flex flex-wrap gap-3">
+                <button onclick="loadCategory('Matematika')" id="btn-Matematika" class="cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]">
+                    <i data-lucide="calculator" class="w-5 h-5 inline mr-2"></i> Matematika
+                </button>
+                <button onclick="loadCategory('Sains')" id="btn-Sains" class="cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-gray-700 text-gray-300 hover:bg-gray-600">
+                    <i data-lucide="microscope" class="w-5 h-5 inline mr-2"></i> Sains
+                </button>
+                <button onclick="loadCategory('Literasi')" id="btn-Literasi" class="cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-gray-700 text-gray-300 hover:bg-gray-600">
+                    <i data-lucide="book-open" class="w-5 h-5 inline mr-2"></i> Literasi
+                </button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <i data-lucide="layers" class="text-gray-400"></i>
+                    <select id="sheetSelector" onchange="changeSheet()" class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full sm:w-56 p-2.5 outline-none">
+                        <option value="">Pilih Sheet...</option>
+                    </select>
+                </div>
+                <div class="relative w-full sm:w-64">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </span>
+                    <input type="text" id="searchInput" placeholder="Cari negara..." 
+                           class="w-full bg-gray-900 border border-gray-600 rounded-lg py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm outline-none text-white transition">
+                </div>
             </div>
         </div>
-    </header>
 
-    <!-- MAIN CONTENT -->
-    <main class="flex-1 flex flex-col overflow-y-auto p-6 space-y-6">
-        
-        <!-- Loading Indicator -->
-        <div id="loadingIndicator" class="flex flex-col items-center justify-center p-10 hidden">
-            <i data-lucide="loader-2" class="w-10 h-10 text-blue-500 animate-spin mb-4"></i>
-            <p class="text-gray-400">Memuat dan memproses file Excel...</p>
+        <!-- LOADING INDICATOR -->
+        <div id="loadingSpinner" class="hidden flex-col items-center justify-center py-20">
+            <i data-lucide="loader-2" class="w-12 h-12 text-purple-500 animate-spin mb-4"></i>
+            <h3 class="text-xl font-bold text-gray-200">Menarik Data...</h3>
+            <p class="text-gray-400 mt-2 text-sm">Engine sedang memproses file Excel.</p>
         </div>
 
-        <!-- Error Message -->
-        <div id="errorMessage" class="bg-red-900/50 border border-red-500 text-red-200 p-4 rounded-lg hidden">
-            <h3 class="font-bold flex items-center gap-2"><i data-lucide="alert-triangle"></i> Gagal Memuat Data</h3>
-            <p class="text-sm mt-1" id="errorText">Pastikan file 'DATA PISA MATEMATIKA1.xlsx' ada di folder yang sama.</p>
+        <!-- ERROR MESSAGE -->
+        <div id="errorMessage" class="hidden bg-red-900/40 border border-red-500 text-red-200 p-6 rounded-2xl mb-8 backdrop-blur-sm">
+            <h3 class="text-lg font-bold flex items-center gap-2"><i data-lucide="alert-octagon"></i> Gagal Memuat Data File</h3>
+            <p class="mt-2 text-gray-300" id="errorText">File tidak ditemukan.</p>
         </div>
 
-        <!-- DASHBOARD CONTENT -->
-        <div id="dashboardContent" class="hidden flex-col gap-6">
+        <!-- DASHBOARD CONTENT (Cards + Table) -->
+        <div id="dashboardContent" class="hidden flex-col gap-8">
             
             <!-- SUMMARY CARDS -->
-            <div id="summaryCards" class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <h4 class="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2"><i data-lucide="trending-up" class="w-4 h-4"></i> Skor Tertinggi</h4>
-                    <div class="text-3xl font-bold text-green-400" id="statHigh">-</div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 shadow-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i data-lucide="trophy" class="w-16 h-16"></i></div>
+                    <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Peringkat 1</h4>
+                    <div class="text-2xl font-bold text-yellow-400 mb-1 truncate" id="cardRank1Name">-</div>
+                    <div class="text-lg text-gray-300 font-mono" id="cardRank1Score">-</div>
                 </div>
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <h4 class="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2"><i data-lucide="trending-down" class="w-4 h-4"></i> Skor Terendah</h4>
-                    <div class="text-3xl font-bold text-red-400" id="statLow">-</div>
+
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 shadow-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i data-lucide="activity" class="w-16 h-16"></i></div>
+                    <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Rata-Rata Skor</h4>
+                    <div class="text-4xl font-bold text-blue-400 mt-2 font-mono" id="cardAvg">-</div>
                 </div>
-                <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                    <h4 class="text-sm font-semibold text-gray-400 mb-2 flex items-center gap-2"><i data-lucide="activity" class="w-4 h-4"></i> Rata-Rata</h4>
-                    <div class="text-3xl font-bold text-blue-400" id="statAvg">-</div>
+
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 shadow-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i data-lucide="map-pin" class="w-16 h-16"></i></div>
+                    <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Status Indonesia</h4>
+                    <div class="text-4xl font-bold text-green-400 mt-2 font-mono" id="cardIndonesia">-</div>
+                </div>
+
+                <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 shadow-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i data-lucide="users" class="w-16 h-16"></i></div>
+                    <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Total Peserta</h4>
+                    <div class="text-4xl font-bold text-purple-400 mt-2 font-mono" id="cardTotal">-</div>
                 </div>
             </div>
 
-            <div class="bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg">
-                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <i data-lucide="bar-chart-2" class="text-purple-400"></i> Visualisasi Data (Top 10)
-                </h3>
-                <div class="w-full h-64">
-                    <canvas id="dynamicChart"></canvas>
+            <!-- DATA TABLE SECTION -->
+            <div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden shadow-2xl flex flex-col">
+                <div class="p-6 border-b border-gray-700 bg-gray-800/80 backdrop-blur-md flex justify-between items-center">
+                    <h3 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400" id="tableTitle">Data Sheet</h3>
                 </div>
-            </div>
-
-            <!-- DYNAMIC TABLE -->
-            <div class="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden shadow-lg flex flex-col">
-                <div class="p-4 border-b border-gray-700 bg-gray-800 flex justify-between items-center">
-                    <h3 class="text-lg font-semibold" id="tableTitle">Data Tabel</h3>
-                </div>
-                <div class="overflow-x-auto max-h-[500px] overflow-y-auto">
-                    <table class="w-full text-left border-collapse whitespace-nowrap">
-                        <thead class="bg-gray-700 text-gray-300 text-xs uppercase sticky top-0 z-10 shadow-md" id="tableHead">
-                            <!-- Header generated dynamically -->
+                <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
+                    <table class="w-full text-left border-collapse whitespace-nowrap relative">
+                        <thead class="bg-gray-900 text-gray-300 text-xs uppercase sticky top-0 z-20 shadow-md" id="tableHead">
+                            <!-- Headers -->
                         </thead>
-                        <tbody class="text-sm divide-y divide-gray-700" id="tableBody">
-                            <!-- Data generated dynamically -->
+                        <tbody class="text-sm divide-y divide-gray-700/50" id="tableBody">
+                            <!-- Data -->
                         </tbody>
                     </table>
                 </div>
             </div>
-        </div>
-    </main>
 
+        </div>
+    </section>
+
+    <!-- JavaScript Logic -->
     <script>
+        const FILES = {
+            'Matematika': 'DATA PISA MATEMATIKA1.xlsx',
+            'Sains': '3rlyb8.xlsx',
+            'Literasi': 'toyp15.xlsx'
+        };
+
+        let currentCategory = 'Matematika';
         let workbook = null;
         let currentData = [];
-        let myChart = null;
-        
-        // State for sorting
+        let filteredData = [];
+        let targetMetricCol = null;
+        let maxValueGlobal = 0;
+
         let currentSortCol = null;
         let currentSortAsc = true;
 
-        async function init() {
-            document.getElementById('loadingIndicator').classList.remove('hidden');
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            loadCategory('Matematika');
+            
+            // Search Listener
+            document.getElementById('searchInput').addEventListener('keyup', (e) => {
+                applyFiltersAndSort();
+            });
+        });
+
+        function updateCategoryTabs() {
+            const categories = ['Matematika', 'Sains', 'Literasi'];
+            categories.forEach(cat => {
+                const btn = document.getElementById('btn-' + cat);
+                if(cat === currentCategory) {
+                    btn.className = "cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]";
+                } else {
+                    btn.className = "cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-gray-700 text-gray-300 hover:bg-gray-600";
+                }
+            });
+        }
+
+        async function loadCategory(category) {
+            currentCategory = category;
+            updateCategoryTabs();
+            
+            document.getElementById('loadingSpinner').classList.remove('hidden');
+            document.getElementById('loadingSpinner').classList.add('flex');
             document.getElementById('dashboardContent').classList.add('hidden');
             document.getElementById('errorMessage').classList.add('hidden');
 
+            const fileName = FILES[category];
+            
             try {
-                const response = await fetch('DATA PISA MATEMATIKA1.xlsx');
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const response = await fetch(fileName);
+                if (!response.ok) throw new Error(`HTTP ${response.status}: File ${fileName} tidak ditemukan.`);
                 
                 const arrayBuffer = await response.arrayBuffer();
                 workbook = XLSX.read(arrayBuffer, { type: 'array' });
@@ -142,15 +220,17 @@
                     changeSheet();
                 }
 
-                document.getElementById('loadingIndicator').classList.add('hidden');
+                document.getElementById('loadingSpinner').classList.remove('flex');
+                document.getElementById('loadingSpinner').classList.add('hidden');
                 document.getElementById('dashboardContent').classList.remove('hidden');
                 document.getElementById('dashboardContent').classList.add('flex');
 
             } catch (error) {
-                console.error("Error loading excel:", error);
-                document.getElementById('loadingIndicator').classList.add('hidden');
+                console.error("Fetch Error:", error);
+                document.getElementById('loadingSpinner').classList.remove('flex');
+                document.getElementById('loadingSpinner').classList.add('hidden');
                 document.getElementById('errorMessage').classList.remove('hidden');
-                document.getElementById('errorText').innerText = "Gagal memuat file 'DATA PISA MATEMATIKA1.xlsx'. Pastikan file sudah berada di GitHub / Folder yang sama. (Error: " + error.message + ")";
+                document.getElementById('errorText').innerText = error.message + " Pastikan file sudah di-upload ke repository.";
             }
         }
 
@@ -158,123 +238,138 @@
             const sheetName = document.getElementById('sheetSelector').value;
             if(!sheetName || !workbook) return;
 
-            document.getElementById('tableTitle').innerText = `Data Sheet: ${sheetName}`;
+            document.getElementById('tableTitle').innerText = `${currentCategory} - ${sheetName}`;
             
             const worksheet = workbook.Sheets[sheetName];
             let rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
             
-            // 5. Hapus Baris Kosong (Jika kolom pertama kosong)
+            // Garbage Filtering
             if(rawData.length > 0) {
                 const firstKey = Object.keys(rawData[0])[0];
                 currentData = rawData.filter(row => {
-                    const val = String(row[firstKey]).trim();
-                    return val !== "" && val.toLowerCase() !== "empty" && val !== "undefined";
+                    const val = String(row[firstKey] || '').trim();
+                    const valLower = val.toLowerCase();
+                    
+                    if(val === "" || valLower === "undefined" || valLower === "null") return false;
+                    if(valLower === 'empty' || valLower === 'unknown' || valLower.includes('oecd average')) return false;
+                    
+                    return true;
                 });
             } else {
                 currentData = [];
             }
             
-            // Reset sort when changing sheet
+            // Identify target metric column for Progress Bar & Summaries
+            identifyMetricColumn(currentData);
+
+            // Reset States
             currentSortCol = null;
             currentSortAsc = true;
             document.getElementById('searchInput').value = '';
 
             updateSummaryCards(currentData);
             applyFiltersAndSort();
-            renderChart(currentData);
         }
 
-        // 4. Summary Cards Calculation
-        function updateSummaryCards(data) {
-            const statHigh = document.getElementById('statHigh');
-            const statLow = document.getElementById('statLow');
-            const statAvg = document.getElementById('statAvg');
+        function identifyMetricColumn(data) {
+            targetMetricCol = null;
+            maxValueGlobal = 0;
+            if(data.length === 0) return;
 
-            if(data.length === 0) {
-                statHigh.innerText = '-';
-                statLow.innerText = '-';
-                statAvg.innerText = '-';
-                return;
-            }
-
-            // Cari kolom angka pertama untuk dijadikan patokan metrik
             const keys = Object.keys(data[0]);
-            let targetKey = null;
             for(let key of keys) {
                 const isNumeric = data.some(row => typeof row[key] === 'number' || (!isNaN(parseFloat(row[key])) && row[key] !== ""));
                 if(isNumeric) {
-                    targetKey = key;
+                    targetMetricCol = key;
                     break;
                 }
             }
 
-            if(!targetKey) {
-                statHigh.innerText = 'N/A';
-                statLow.innerText = 'N/A';
-                statAvg.innerText = 'N/A';
-                return;
-            }
-
-            let max = -Infinity;
-            let min = Infinity;
-            let sum = 0;
-            let count = 0;
-
-            data.forEach(row => {
-                let val = parseFloat(row[targetKey]);
-                if(!isNaN(val)) {
-                    if(val > max) max = val;
-                    if(val < min) min = val;
-                    sum += val;
-                    count++;
-                }
-            });
-
-            if(count > 0) {
-                const avg = sum / count;
-                // 1. Pembulatan Angka (1 angka di belakang koma)
-                statHigh.innerText = formatNumber(max);
-                statLow.innerText = formatNumber(min);
-                statAvg.innerText = formatNumber(avg);
-            } else {
-                statHigh.innerText = '-';
-                statLow.innerText = '-';
-                statAvg.innerText = '-';
+            if(targetMetricCol) {
+                data.forEach(row => {
+                    let val = parseFloat(row[targetMetricCol]);
+                    if(!isNaN(val) && val > maxValueGlobal) {
+                        maxValueGlobal = val;
+                    }
+                });
             }
         }
 
-        // 1. Pembulatan 1 desimal
         function formatNumber(num) {
             if(typeof num !== 'number') return num;
             return (num % 1 !== 0) ? num.toFixed(1) : num;
         }
 
-        // 2 & 3. Search Pintar dan Sorting Otomatis
+        function updateSummaryCards(data) {
+            const cRank1Name = document.getElementById('cardRank1Name');
+            const cRank1Score = document.getElementById('cardRank1Score');
+            const cAvg = document.getElementById('cardAvg');
+            const cIndo = document.getElementById('cardIndonesia');
+            const cTotal = document.getElementById('cardTotal');
+
+            if(data.length === 0 || !targetMetricCol) {
+                cRank1Name.innerText = 'Tidak Ada Data';
+                cRank1Score.innerText = '-';
+                cAvg.innerText = '-';
+                cIndo.innerText = '-';
+                cTotal.innerText = '0';
+                return;
+            }
+
+            let maxVal = -Infinity;
+            let topCountry = '-';
+            let sum = 0;
+            let count = 0;
+            let indoScore = 'Tidak Ada';
+
+            const firstKey = Object.keys(data[0])[0];
+
+            data.forEach(row => {
+                let val = parseFloat(row[targetMetricCol]);
+                let countryName = String(row[firstKey]).trim();
+
+                if(!isNaN(val)) {
+                    if(val > maxVal) {
+                        maxVal = val;
+                        topCountry = countryName;
+                    }
+                    sum += val;
+                    count++;
+                }
+
+                if(countryName.toLowerCase().includes('indonesia')) {
+                    indoScore = isNaN(val) ? 'N/A' : formatNumber(val);
+                }
+            });
+
+            cRank1Name.innerText = topCountry;
+            cRank1Score.innerText = formatNumber(maxVal) + ' Poin';
+            cAvg.innerText = count > 0 ? formatNumber(sum / count) : '-';
+            cIndo.innerText = indoScore;
+            cTotal.innerText = data.length;
+        }
+
         function applyFiltersAndSort() {
             const query = document.getElementById('searchInput').value.toLowerCase();
-            let filteredData = currentData;
+            filteredData = currentData;
 
-            // Apply Search Filter (Real-time)
             if(query) {
                 filteredData = currentData.filter(row => {
                     return Object.values(row).some(val => String(val).toLowerCase().includes(query));
                 });
             }
 
-            // Apply Sorting
             if(currentSortCol) {
                 filteredData.sort((a, b) => {
                     let valA = a[currentSortCol];
                     let valB = b[currentSortCol];
 
-                    // Sort numeric if both are numbers
                     let numA = parseFloat(valA);
                     let numB = parseFloat(valB);
                     if(!isNaN(numA) && !isNaN(numB) && valA !== "" && valB !== "") {
                         return currentSortAsc ? numA - numB : numB - numA;
                     }
 
-                    // String sorting
                     valA = String(valA || '').toLowerCase();
                     valB = String(valB || '').toLowerCase();
                     if (valA < valB) return currentSortAsc ? -1 : 1;
@@ -294,73 +389,102 @@
             tbody.innerHTML = '';
 
             if(data.length === 0) {
-                tbody.innerHTML = '<tr><td class="p-4 text-center text-gray-400" colspan="100%">Tidak ada data yang cocok.</td></tr>';
+                tbody.innerHTML = `
+                    <tr>
+                        <td class="p-10 text-center text-gray-400" colspan="100%">
+                            <div class="flex flex-col items-center justify-center">
+                                <i data-lucide="search-x" class="w-12 h-12 text-gray-600 mb-3"></i>
+                                <p class="text-lg">Negara tidak ditemukan dalam kategori ini.</p>
+                            </div>
+                        </td>
+                    </tr>`;
+                lucide.createIcons();
                 return;
             }
 
             const keys = Object.keys(data[0]);
             const trHead = document.createElement('tr');
             
-            // Generate Headers with Sorting Logic
             keys.forEach(key => {
                 const th = document.createElement('th');
-                th.className = 'p-4 font-semibold tracking-wide cursor-pointer hover:text-white hover:bg-gray-600 transition group select-none';
+                th.className = 'p-4 font-bold tracking-wide cursor-pointer hover:text-white hover:bg-gray-800 transition group select-none border-b border-gray-700';
                 
                 const flexDiv = document.createElement('div');
-                flexDiv.className = 'flex items-center gap-1';
+                flexDiv.className = 'flex items-center gap-2';
                 
                 const span = document.createElement('span');
                 span.textContent = key;
                 flexDiv.appendChild(span);
 
-                // Sorting Icons
                 if (currentSortCol === key) {
                     const icon = document.createElement('i');
-                    icon.setAttribute('data-lucide', currentSortAsc ? 'chevron-up' : 'chevron-down');
-                    icon.className = 'w-4 h-4 text-blue-400';
+                    icon.setAttribute('data-lucide', currentSortAsc ? 'arrow-up' : 'arrow-down');
+                    icon.className = 'w-4 h-4 text-purple-400';
                     flexDiv.appendChild(icon);
                 } else {
                     const icon = document.createElement('i');
-                    icon.setAttribute('data-lucide', 'chevrons-up-down');
-                    icon.className = 'w-4 h-4 text-gray-500 opacity-0 group-hover:opacity-100 transition';
+                    icon.setAttribute('data-lucide', 'arrow-up-down');
+                    icon.className = 'w-4 h-4 text-gray-600 opacity-0 group-hover:opacity-100 transition';
                     flexDiv.appendChild(icon);
                 }
 
                 th.appendChild(flexDiv);
-
-                // Click event for sorting
                 th.onclick = () => {
                     if (currentSortCol === key) {
-                        currentSortAsc = !currentSortAsc; // toggle
+                        currentSortAsc = !currentSortAsc;
                     } else {
                         currentSortCol = key;
-                        currentSortAsc = true; // default ascending
+                        currentSortAsc = true;
                     }
                     applyFiltersAndSort();
                 };
-
                 trHead.appendChild(th);
             });
             thead.appendChild(trHead);
 
-            // Generate Rows
             data.forEach(row => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-700/50 transition';
+                tr.className = 'hover:bg-gray-800/60 transition group relative';
+                
                 keys.forEach(key => {
                     const td = document.createElement('td');
-                    td.className = 'p-4';
+                    td.className = 'p-4 relative z-10';
                     
-                    // 1. Pembulatan Angka saat rendering
-                    let val = row[key];
-                    if (typeof val === 'number') {
-                        val = formatNumber(val);
-                    } else if (typeof val === 'string' && val.trim() !== '' && !isNaN(val)) {
-                        let parsed = parseFloat(val);
-                        if (!isNaN(parsed)) val = formatNumber(parsed);
+                    let rawVal = row[key];
+                    let displayVal = rawVal;
+                    let isNumeric = false;
+
+                    if (typeof rawVal === 'number') {
+                        displayVal = formatNumber(rawVal);
+                        isNumeric = true;
+                    } else if (typeof rawVal === 'string' && rawVal.trim() !== '' && !isNaN(rawVal)) {
+                        let parsed = parseFloat(rawVal);
+                        if (!isNaN(parsed)) {
+                            displayVal = formatNumber(parsed);
+                            isNumeric = true;
+                        }
+                    }
+
+                    // Visual Progress Bar for Target Metric Column
+                    if(key === targetMetricCol && isNumeric && maxValueGlobal > 0) {
+                        const numVal = parseFloat(rawVal);
+                        const percent = Math.min(100, Math.max(0, (numVal / maxValueGlobal) * 100));
+                        
+                        // Progress Bar Background
+                        const bar = document.createElement('div');
+                        bar.className = 'absolute top-1 bottom-1 left-1 rounded bg-gradient-to-r from-purple-900/40 to-blue-900/40 -z-10 transition-all duration-700';
+                        bar.style.width = percent + '%';
+                        td.appendChild(bar);
+                        
+                        // Highlight text
+                        const textSpan = document.createElement('span');
+                        textSpan.className = 'font-mono font-bold text-white';
+                        textSpan.textContent = displayVal;
+                        td.appendChild(textSpan);
+                    } else {
+                        td.textContent = displayVal;
                     }
                     
-                    td.textContent = val;
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
@@ -368,75 +492,6 @@
 
             lucide.createIcons();
         }
-
-        function renderChart(data) {
-            if(myChart) myChart.destroy();
-            if(data.length === 0) return;
-
-            const keys = Object.keys(data[0]);
-            let labelKey = keys[0]; 
-            let dataKeys = [];
-
-            keys.forEach(key => {
-                if(typeof data[0][key] === 'number') {
-                    dataKeys.push(key);
-                }
-            });
-
-            if (dataKeys.length === 0 && data.length > 0) {
-                keys.forEach(key => {
-                     const val = parseFloat(data[0][key]);
-                     if(!isNaN(val)) dataKeys.push(key);
-                });
-            }
-
-            const chartData = data.slice(0, 10);
-            const labels = chartData.map(row => row[labelKey] || 'Unknown');
-            
-            const datasets = [];
-            const colors = ['#60a5fa', '#f87171', '#34d399', '#fbbf24', '#a78bfa'];
-
-            if (dataKeys.length > 0) {
-                dataKeys.slice(0, 3).forEach((key, index) => {
-                    datasets.push({
-                        label: key,
-                        data: chartData.map(row => parseFloat(row[key]) || 0),
-                        backgroundColor: colors[index % colors.length],
-                        borderColor: colors[index % colors.length],
-                        borderWidth: 1
-                    });
-                });
-            } else {
-                datasets.push({
-                    label: 'Tidak ada metrik angka',
-                    data: chartData.map(() => 0)
-                });
-            }
-
-            const ctx = document.getElementById('dynamicChart').getContext('2d');
-            myChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: datasets
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { labels: { color: '#9ca3af' } }
-                    },
-                    scales: {
-                        y: { grid: { color: '#374151' }, ticks: { color: '#9ca3af' } },
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af' } }
-                    }
-                }
-            });
-        }
-
-        // Run
-        init();
-        lucide.createIcons();
     </script>
 </body>
 </html>
