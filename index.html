@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PISAlyze - Portal Analisis Data Pendidikan Nasional</title>
+    <title>PISA - Eksplorasi Dataset</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- SheetJS -->
@@ -13,339 +13,250 @@
     <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
-        /* Gradient Progress Bar Animation */
-        .progress-bar-fill {
-            transition: width 0.8s ease-out;
-            background: linear-gradient(90deg, rgba(147,51,234,0.6) 0%, rgba(59,130,246,0.6) 100%);
-        }
-        /* Custom Scrollbar */
+        body { font-family: 'Inter', sans-serif; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #1f2937; }
-        ::-webkit-scrollbar-thumb { background: #4b5563; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #6b7280; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-100 overflow-x-hidden">
+<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
 
-    <!-- HERO SECTION -->
-    <section class="relative min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-gray-900 to-blue-900 overflow-hidden">
-        <div class="absolute inset-0 bg-black/40"></div> <!-- Overlay -->
-        <div class="relative z-10 text-center px-6 max-w-4xl mx-auto">
-            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 text-blue-300 text-sm font-semibold mb-6 backdrop-blur-md">
-                <i data-lucide="bar-chart-2" class="w-4 h-4"></i> Data Valid PISA 2022
-            </div>
-            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400">
-                PISAlyze
-            </h1>
-            <p class="text-lg md:text-2xl text-gray-300 mb-10 font-light leading-relaxed">
-                Portal Analisis Data Pendidikan Nasional. Eksplorasi mendalam metrik Matematika, Sains, dan Literasi dari database OECD dengan sistem pembersihan data otomatis.
-            </p>
-            <a href="#dashboard" class="inline-flex items-center gap-3 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white rounded-full font-bold text-lg transition-all transform hover:scale-105 shadow-[0_0_20px_rgba(37,99,235,0.4)]">
-                Lihat Dashboard <i data-lucide="arrow-down" class="w-5 h-5 animate-bounce"></i>
-            </a>
+    <!-- MINIMALIST NAVBAR -->
+    <nav class="w-full py-3 px-6 flex justify-end items-center border-b border-gray-800 bg-gray-900">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center font-bold text-sm shadow-[0_0_10px_rgba(147,51,234,0.5)]">TR</div>
+            <span class="text-sm font-medium text-gray-300">Tegar Rafi H.</span>
         </div>
-        
-        <!-- Decorative Shapes -->
-        <div class="absolute top-1/4 left-10 w-72 h-72 bg-purple-600/20 rounded-full mix-blend-screen filter blur-[80px] animate-pulse"></div>
-        <div class="absolute bottom-1/4 right-10 w-96 h-96 bg-blue-600/20 rounded-full mix-blend-screen filter blur-[100px] animate-pulse delay-75"></div>
-    </section>
+    </nav>
 
-    <!-- DASHBOARD SECTION -->
-    <section id="dashboard" class="min-h-screen flex flex-col p-6 md:p-10 max-w-[1600px] mx-auto w-full">
+    <main class="flex-1 p-6 md:p-10 max-w-[1400px] mx-auto w-full flex flex-col gap-8">
         
-        <!-- CATEGORY TABS & SEARCH -->
-        <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8 bg-gray-800/50 p-6 rounded-2xl border border-gray-700 backdrop-blur-sm">
-            <div class="flex flex-wrap gap-3">
-                <button onclick="loadCategory('Matematika')" id="btn-Matematika" class="cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]">
-                    <i data-lucide="calculator" class="w-5 h-5 inline mr-2"></i> Matematika
-                </button>
-                <button onclick="loadCategory('Sains')" id="btn-Sains" class="cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-gray-700 text-gray-300 hover:bg-gray-600">
-                    <i data-lucide="microscope" class="w-5 h-5 inline mr-2"></i> Sains
-                </button>
-                <button onclick="loadCategory('Literasi')" id="btn-Literasi" class="cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-gray-700 text-gray-300 hover:bg-gray-600">
-                    <i data-lucide="book-open" class="w-5 h-5 inline mr-2"></i> Literasi
-                </button>
+        <!-- HEADER ROW: TITLE & DUAL-DROPDOWN -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-gray-800 pb-6">
+            <div>
+                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
+                    <i data-lucide="database" class="w-8 h-8 text-purple-500"></i> Eksplorasi Dataset
+                </h1>
+                <p class="text-gray-400 mt-2 text-sm" id="subtitleText">Memuat engine data...</p>
             </div>
-
-            <div class="flex flex-col sm:flex-row items-center gap-4 w-full lg:w-auto">
-                <div class="flex items-center gap-2 w-full sm:w-auto">
-                    <i data-lucide="layers" class="text-gray-400"></i>
-                    <select id="sheetSelector" onchange="changeSheet()" class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-full sm:w-56 p-2.5 outline-none">
-                        <option value="">Pilih Sheet...</option>
+            
+            <div class="flex items-center gap-3 bg-gray-900/50 p-2 rounded-xl border border-gray-800">
+                <div class="flex flex-col">
+                    <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 mb-1">Sumber Data</label>
+                    <select id="sumberData" onchange="fetchData()" class="bg-gray-800 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-48 p-2.5 outline-none border border-gray-700 cursor-pointer transition hover:bg-gray-700">
+                        <option value="DATA PISA MATEMATIKA1.xlsx">Matematika</option>
+                        <option value="3rlyb8.xlsx">Sains</option>
+                        <option value="toyp15.xlsx">Literasi</option>
                     </select>
                 </div>
-                <div class="relative w-full sm:w-64">
-                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
-                        <i data-lucide="search" class="w-4 h-4"></i>
-                    </span>
-                    <input type="text" id="searchInput" placeholder="Cari negara..." 
-                           class="w-full bg-gray-900 border border-gray-600 rounded-lg py-2.5 pl-10 pr-4 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm outline-none text-white transition">
+                <div class="flex flex-col">
+                    <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 mb-1">Tahun</label>
+                    <select id="tahunData" onchange="processWorkbook()" class="bg-gray-800 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-32 p-2.5 outline-none border border-gray-700 cursor-pointer transition hover:bg-gray-700">
+                        <option value="2022">2022</option>
+                        <option value="2018">2018</option>
+                        <option value="2015">2015</option>
+                    </select>
                 </div>
             </div>
         </div>
 
         <!-- LOADING INDICATOR -->
-        <div id="loadingSpinner" class="hidden flex-col items-center justify-center py-20">
-            <i data-lucide="loader-2" class="w-12 h-12 text-purple-500 animate-spin mb-4"></i>
-            <h3 class="text-xl font-bold text-gray-200">Menarik & Membersihkan Data...</h3>
-            <p class="text-gray-400 mt-2 text-sm">Strict Filter Engine sedang bekerja membuang baris teks sampah.</p>
+        <div id="loadingIndicator" class="hidden flex-col items-center justify-center py-20">
+            <i data-lucide="loader-2" class="w-10 h-10 text-purple-500 animate-spin mb-4"></i>
+            <p class="text-gray-400 font-medium tracking-wide animate-pulse">Menarik & Membersihkan Data...</p>
         </div>
 
-        <!-- ERROR MESSAGE -->
-        <div id="errorMessage" class="hidden bg-red-900/40 border border-red-500 text-red-200 p-6 rounded-2xl mb-8 backdrop-blur-sm">
-            <h3 class="text-lg font-bold flex items-center gap-2"><i data-lucide="alert-octagon"></i> Gagal Memuat Data File</h3>
-            <p class="mt-2 text-gray-300" id="errorText">File tidak ditemukan.</p>
-        </div>
-
-        <!-- DASHBOARD CONTENT (Cards + Chart + Table) -->
+        <!-- DASHBOARD CONTENT -->
         <div id="dashboardContent" class="hidden flex-col gap-8">
             
-            <!-- SUMMARY CARDS -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 shadow-xl relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i data-lucide="trophy" class="w-16 h-16"></i></div>
-                    <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Peringkat 1</h4>
-                    <div class="text-2xl font-bold text-yellow-400 mb-1 truncate" id="cardRank1Name">-</div>
-                    <div class="text-lg text-gray-300 font-mono" id="cardRank1Score">-</div>
+            <!-- CHARTS SECTION -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Line Chart -->
+                <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-lg">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-4 h-4 text-purple-400"></i> Tren Skor (Top 10)
+                    </h3>
+                    <div class="w-full h-64"><canvas id="lineChart"></canvas></div>
                 </div>
-
-                <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 shadow-xl relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i data-lucide="activity" class="w-16 h-16"></i></div>
-                    <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Rata-Rata Skor</h4>
-                    <div class="text-4xl font-bold text-blue-400 mt-2 font-mono" id="cardAvg">-</div>
-                </div>
-
-                <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 shadow-xl relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i data-lucide="map-pin" class="w-16 h-16"></i></div>
-                    <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Status Indonesia</h4>
-                    <div class="text-4xl font-bold text-green-400 mt-2 font-mono" id="cardIndonesia">-</div>
-                </div>
-
-                <div class="bg-gradient-to-br from-gray-800 to-gray-900 p-6 rounded-2xl border border-gray-700 shadow-xl relative overflow-hidden group">
-                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition"><i data-lucide="users" class="w-16 h-16"></i></div>
-                    <h4 class="text-sm font-semibold text-gray-400 mb-2 uppercase tracking-wider">Total Peserta</h4>
-                    <div class="text-4xl font-bold text-purple-400 mt-2 font-mono" id="cardTotal">-</div>
+                <!-- Pie Chart -->
+                <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-lg">
+                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-blue-400"></i> Distribusi Top 5 Negara
+                    </h3>
+                    <div class="w-full h-64"><canvas id="pieChart"></canvas></div>
                 </div>
             </div>
 
-            <!-- DYNAMIC CHART SECTION -->
-            <div class="bg-gray-800 p-6 rounded-2xl border border-gray-700 shadow-xl">
-                <h3 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400 mb-4 flex items-center gap-2">
-                    <i data-lucide="bar-chart-2"></i> Top 10 Negara
-                </h3>
-                <div class="w-full h-72">
-                    <canvas id="dynamicChart"></canvas>
+            <!-- TABLE SECTION -->
+            <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden shadow-xl flex flex-col relative">
+                <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                    <i data-lucide="table" class="w-32 h-32"></i>
                 </div>
-            </div>
-
-            <!-- DATA TABLE SECTION -->
-            <div class="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden shadow-2xl flex flex-col">
-                <div class="p-6 border-b border-gray-700 bg-gray-800/80 backdrop-blur-md flex justify-between items-center">
-                    <h3 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-400" id="tableTitle">Data Sheet</h3>
-                </div>
-                <div class="overflow-x-auto max-h-[600px] overflow-y-auto">
-                    <table class="w-full text-left border-collapse whitespace-nowrap relative">
-                        <thead class="bg-gray-900 text-gray-300 text-xs uppercase sticky top-0 z-20 shadow-md" id="tableHead">
-                            <!-- Headers -->
+                <div class="overflow-x-auto max-h-[600px] overflow-y-auto z-10">
+                    <table class="w-full text-left border-collapse whitespace-nowrap">
+                        <thead class="bg-gray-950/80 backdrop-blur-md text-gray-400 text-xs uppercase sticky top-0 z-20 shadow-md border-b border-gray-800" id="tableHead">
+                            <!-- Generated -->
                         </thead>
-                        <tbody class="text-sm divide-y divide-gray-700/50" id="tableBody">
-                            <!-- Data -->
+                        <tbody class="text-sm divide-y divide-gray-800/60" id="tableBody">
+                            <!-- Generated -->
                         </tbody>
                     </table>
                 </div>
             </div>
-
         </div>
-    </section>
 
-    <!-- JavaScript Logic -->
+    </main>
+
     <script>
-        const FILES = {
-            'Matematika': 'DATA PISA MATEMATIKA1.xlsx',
-            'Sains': '3rlyb8.xlsx',
-            'Literasi': 'toyp15.xlsx'
-        };
-
-        let currentCategory = 'Matematika';
-        let workbook = null;
-        let currentData = [];
-        let filteredData = [];
+        let workbookCache = null;
+        let currentFileName = null;
         let targetMetricCol = null;
         let maxValueGlobal = 0;
-        let myChart = null;
-
-        let currentSortCol = null;
-        let currentSortAsc = true;
+        let cLine = null;
+        let cPie = null;
 
         document.addEventListener('DOMContentLoaded', () => {
             lucide.createIcons();
-            loadCategory('Matematika');
-            
-            document.getElementById('searchInput').addEventListener('keyup', (e) => {
-                applyFiltersAndSort();
-            });
+            fetchData();
         });
 
-        function updateCategoryTabs() {
-            const categories = ['Matematika', 'Sains', 'Literasi'];
-            categories.forEach(cat => {
-                const btn = document.getElementById('btn-' + cat);
-                if(cat === currentCategory) {
-                    btn.className = "cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-blue-600 text-white shadow-[0_0_15px_rgba(37,99,235,0.3)]";
-                } else {
-                    btn.className = "cat-btn px-6 py-3 rounded-xl font-bold transition-all bg-gray-700 text-gray-300 hover:bg-gray-600";
-                }
-            });
-        }
-
-        async function loadCategory(category) {
-            currentCategory = category;
-            updateCategoryTabs();
+        async function fetchData() {
+            const fileName = document.getElementById('sumberData').value;
             
-            document.getElementById('loadingSpinner').classList.remove('hidden');
-            document.getElementById('loadingSpinner').classList.add('flex');
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+            document.getElementById('loadingIndicator').classList.add('flex');
             document.getElementById('dashboardContent').classList.add('hidden');
-            document.getElementById('errorMessage').classList.add('hidden');
 
-            const fileName = FILES[category];
-            
             try {
-                const response = await fetch(fileName);
-                if (!response.ok) throw new Error(`HTTP ${response.status}: File ${fileName} tidak ditemukan.`);
-                
-                const arrayBuffer = await response.arrayBuffer();
-                workbook = XLSX.read(arrayBuffer, { type: 'array' });
-                
-                const selector = document.getElementById('sheetSelector');
-                selector.innerHTML = ''; 
-                
-                workbook.SheetNames.forEach((sheetName) => {
-                    const option = document.createElement('option');
-                    option.value = sheetName;
-                    option.textContent = sheetName;
-                    selector.appendChild(option);
-                });
-
-                if(workbook.SheetNames.length > 0) {
-                    // AUTO-SELECT VALID SHEET
-                    let defaultSheet = null;
-                    for(let i=0; i<workbook.SheetNames.length; i++) {
-                        let sheetName = workbook.SheetNames[i];
-                        if(sheetName.toLowerCase() !== 'toc') {
-                            // Cek apakah sheet ini punya data numerik
-                            let worksheet = workbook.Sheets[sheetName];
-                            let raw = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                            // Strict check: if there's any row with numbers
-                            let hasNumbers = false;
-                            for(let j=0; j<Math.min(20, raw.length); j++) {
-                                let keys = Object.keys(raw[j]);
-                                for(let k of keys) {
-                                    if(typeof raw[j][k] === 'number') {
-                                        hasNumbers = true;
-                                        break;
-                                    }
-                                }
-                                if(hasNumbers) break;
-                            }
-                            if(hasNumbers) {
-                                defaultSheet = sheetName;
-                                break;
-                            }
-                        }
-                    }
-                    if(!defaultSheet) defaultSheet = workbook.SheetNames[0];
-                    selector.value = defaultSheet;
-                    changeSheet();
+                // Fetch only if file changed
+                if(currentFileName !== fileName || !workbookCache) {
+                    const response = await fetch(fileName);
+                    if (!response.ok) throw new Error("File tidak ditemukan");
+                    const arrayBuffer = await response.arrayBuffer();
+                    workbookCache = XLSX.read(arrayBuffer, { type: 'array' });
+                    currentFileName = fileName;
                 }
+                
+                processWorkbook();
 
-                document.getElementById('loadingSpinner').classList.remove('flex');
-                document.getElementById('loadingSpinner').classList.add('hidden');
-                document.getElementById('dashboardContent').classList.remove('hidden');
-                document.getElementById('dashboardContent').classList.add('flex');
-
-            } catch (error) {
-                console.error("Fetch Error:", error);
-                document.getElementById('loadingSpinner').classList.remove('flex');
-                document.getElementById('loadingSpinner').classList.add('hidden');
-                document.getElementById('errorMessage').classList.remove('hidden');
-                document.getElementById('errorText').innerText = error.message + " Pastikan file sudah di-upload ke repository.";
+            } catch(e) {
+                console.error(e);
+                alert("Gagal memuat " + fileName + ". Pastikan file Excel tersedia.");
+                document.getElementById('loadingIndicator').classList.remove('flex');
+                document.getElementById('loadingIndicator').classList.add('hidden');
             }
         }
 
-        function changeSheet() {
-            const sheetName = document.getElementById('sheetSelector').value;
-            if(!sheetName || !workbook) return;
+        function processWorkbook() {
+            if(!workbookCache) return;
+            const targetYear = document.getElementById('tahunData').value;
+            const categoryName = document.getElementById('sumberData').options[document.getElementById('sumberData').selectedIndex].text;
+            
+            let selectedSheet = null;
+            let validSheets = [];
 
-            document.getElementById('tableTitle').innerText = `${currentCategory} - ${sheetName}`;
-            
-            const worksheet = workbook.Sheets[sheetName];
+            for(let i=0; i<workbookCache.SheetNames.length; i++) {
+                let sName = workbookCache.SheetNames[i];
+                if(sName.toLowerCase() === 'toc') continue;
+
+                let worksheet = workbookCache.Sheets[sName];
+                let raw = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                
+                let hasNumbers = false;
+                for(let j=0; j<Math.min(20, raw.length); j++) {
+                    let keys = Object.keys(raw[j]);
+                    for(let k of keys) {
+                        if(typeof raw[j][k] === 'number') {
+                            hasNumbers = true;
+                            break;
+                        }
+                    }
+                    if(hasNumbers) break;
+                }
+                
+                if(hasNumbers) {
+                    validSheets.push(sName);
+                    // Match sheet name with year if possible
+                    if(sName.includes(targetYear)) {
+                        selectedSheet = sName;
+                    }
+                }
+            }
+
+            if(!selectedSheet && validSheets.length > 0) {
+                selectedSheet = validSheets[0]; // fallback if year not found
+            }
+
+            if(!selectedSheet) {
+                alert("Tidak ada data valid yang ditemukan di file ini.");
+                return;
+            }
+
+            document.getElementById('subtitleText').innerHTML = `Menampilkan data <span class="font-bold text-white">${categoryName}</span> dari Sheet: <span class="text-purple-400 font-mono">${selectedSheet}</span>`;
+
+            const worksheet = workbookCache.Sheets[selectedSheet];
             let rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-            
-            // 1. Identify Target Metric Column first
+
+            // Detect Metric Column
             targetMetricCol = null;
             if(rawData.length > 0) {
                 const keys = Object.keys(rawData[0]);
                 let scoresByCol = {};
                 keys.forEach(k => scoresByCol[k] = 0);
-
                 rawData.forEach(row => {
                     keys.forEach(k => {
-                        if (!isNaN(parseFloat(row[k])) && String(row[k]).trim() !== "") {
-                            scoresByCol[k]++;
-                        }
+                        if (!isNaN(parseFloat(row[k])) && String(row[k]).trim() !== "") scoresByCol[k]++;
                     });
                 });
-
-                let maxNumbers = 0;
+                let maxN = 0;
                 keys.forEach(k => {
-                    if (scoresByCol[k] > maxNumbers) {
-                        maxNumbers = scoresByCol[k];
+                    if (scoresByCol[k] > maxN) {
+                        maxN = scoresByCol[k];
                         targetMetricCol = k;
                     }
                 });
             }
 
-            // 2. Strict Garbage Filtering
+            // STRICT GARBAGE FILTERING
+            let cleanData = [];
             if(rawData.length > 0 && targetMetricCol) {
                 const countryKey = Object.keys(rawData[0])[0];
-                currentData = rawData.filter(row => {
+                cleanData = rawData.filter(row => {
                     const countryVal = String(row[countryKey] || '').trim();
-                    const valLower = countryVal.toLowerCase();
+                    const valL = countryVal.toLowerCase();
                     
-                    if(countryVal === "" || valLower === "undefined" || valLower === "null") return false;
-                    if(valLower === 'empty' || valLower === 'unknown' || valLower.includes('oecd average')) return false;
-                    if(valLower === 'toc' || valLower.includes('table ') || valLower.includes('figure ')) return false;
-                    if(countryVal.length > 40) return false; // Likely a paragraph or title row
+                    if(!countryVal || valL === 'undefined' || valL === 'null') return false;
+                    
+                    // Filter kata sampah
+                    const garbages = ['table', 'toc', 'note', 'figure', 'empty', 'unknown', 'oecd average', 'oecd', 'partners', 'mean'];
+                    if(garbages.some(g => valL.includes(g))) return false;
+                    if(countryVal.length > 40) return false;
 
-                    // Strict Numeric check
+                    // Harus ada angka valid di skor
                     const metricVal = row[targetMetricCol];
                     if(metricVal === "" || isNaN(parseFloat(metricVal))) return false;
                     
                     return true;
                 });
-            } else {
-                currentData = [];
             }
-            
-            // 3. Find Max Value for Progress Bars
+
+            // Sort Descending by default
+            cleanData.sort((a, b) => parseFloat(b[targetMetricCol]) - parseFloat(a[targetMetricCol]));
+
+            // Max Value for progress bar
             maxValueGlobal = 0;
-            if(targetMetricCol) {
-                currentData.forEach(row => {
-                    let val = parseFloat(row[targetMetricCol]);
-                    if(!isNaN(val) && val > maxValueGlobal) {
-                        maxValueGlobal = val;
-                    }
-                });
+            if(cleanData.length > 0) {
+                maxValueGlobal = parseFloat(cleanData[0][targetMetricCol]);
             }
 
-            // Reset States
-            currentSortCol = null;
-            currentSortAsc = true;
-            document.getElementById('searchInput').value = '';
+            renderCharts(cleanData);
+            renderTable(cleanData);
 
-            updateSummaryCards(currentData);
-            applyFiltersAndSort();
+            document.getElementById('loadingIndicator').classList.remove('flex');
+            document.getElementById('loadingIndicator').classList.add('hidden');
+            document.getElementById('dashboardContent').classList.remove('hidden');
+            document.getElementById('dashboardContent').classList.add('flex');
         }
 
         function formatNumber(num) {
@@ -353,259 +264,143 @@
             return (num % 1 !== 0) ? num.toFixed(1) : num;
         }
 
-        function updateSummaryCards(data) {
-            const cRank1Name = document.getElementById('cardRank1Name');
-            const cRank1Score = document.getElementById('cardRank1Score');
-            const cAvg = document.getElementById('cardAvg');
-            const cIndo = document.getElementById('cardIndonesia');
-            const cTotal = document.getElementById('cardTotal');
+        function renderCharts(data) {
+            if(cLine) cLine.destroy();
+            if(cPie) cPie.destroy();
 
-            if(data.length === 0 || !targetMetricCol) {
-                cRank1Name.innerText = 'Tidak Ada Data';
-                cRank1Score.innerText = '-';
-                cAvg.innerText = '-';
-                cIndo.innerText = '-';
-                cTotal.innerText = '0';
-                return;
-            }
-
-            let maxVal = -Infinity;
-            let topCountry = '-';
-            let sum = 0;
-            let count = 0;
-            let indoScore = 'Tidak Ada';
-
-            const firstKey = Object.keys(data[0])[0];
-
-            data.forEach(row => {
-                let val = parseFloat(row[targetMetricCol]);
-                let countryName = String(row[firstKey]).trim();
-
-                if(!isNaN(val)) {
-                    if(val > maxVal) {
-                        maxVal = val;
-                        topCountry = countryName;
-                    }
-                    sum += val;
-                    count++;
-                }
-
-                if(countryName.toLowerCase().includes('indonesia')) {
-                    indoScore = isNaN(val) ? 'N/A' : formatNumber(val);
-                }
-            });
-
-            cRank1Name.innerText = topCountry;
-            cRank1Score.innerText = formatNumber(maxVal) + ' Poin';
-            cAvg.innerText = count > 0 ? formatNumber(sum / count) : '-';
-            cIndo.innerText = indoScore;
-            cTotal.innerText = data.length;
-        }
-
-        function renderChart(data) {
-            if(myChart) myChart.destroy();
             if(data.length === 0 || !targetMetricCol) return;
 
-            // Sort data descending to get top 10 for chart
-            const chartData = [...data].sort((a, b) => {
-                return parseFloat(b[targetMetricCol] || 0) - parseFloat(a[targetMetricCol] || 0);
-            }).slice(0, 10);
-
             const countryKey = Object.keys(data[0])[0];
-            const labels = chartData.map(row => row[countryKey] || 'Unknown');
-            const values = chartData.map(row => parseFloat(row[targetMetricCol]) || 0);
+            const top10 = data.slice(0, 10);
+            const top5 = data.slice(0, 5);
 
-            const ctx = document.getElementById('dynamicChart').getContext('2d');
+            const labels10 = top10.map(r => r[countryKey]);
+            const vals10 = top10.map(r => parseFloat(r[targetMetricCol]));
+
+            const labels5 = top5.map(r => r[countryKey]);
+            const vals5 = top5.map(r => parseFloat(r[targetMetricCol]));
+
+            // LINE CHART
+            const ctxL = document.getElementById('lineChart').getContext('2d');
             
-            // Gradient fill for bars
-            let gradient = ctx.createLinearGradient(0, 0, 0, 400);
-            gradient.addColorStop(0, 'rgba(147, 51, 234, 0.8)'); // Purple
-            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.8)'); // Blue
+            let gradL = ctxL.createLinearGradient(0, 0, 0, 400);
+            gradL.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
+            gradL.addColorStop(1, 'rgba(168, 85, 247, 0)');
 
-            myChart = new Chart(ctx, {
-                type: 'bar',
+            cLine = new Chart(ctxL, {
+                type: 'line',
                 data: {
-                    labels: labels,
+                    labels: labels10,
                     datasets: [{
-                        label: targetMetricCol,
-                        data: values,
-                        backgroundColor: gradient,
-                        borderRadius: 6,
-                        borderWidth: 0
+                        label: 'Skor',
+                        data: vals10,
+                        borderColor: '#a855f7', // purple-500
+                        backgroundColor: gradL,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#fff',
+                        pointBorderColor: '#a855f7',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        fill: true,
+                        tension: 0.4
                     }]
                 },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
                     scales: {
-                        y: { 
-                            grid: { color: '#374151' }, 
-                            ticks: { color: '#9ca3af' } 
-                        },
-                        x: { 
-                            grid: { display: false }, 
-                            ticks: { color: '#9ca3af', maxRotation: 45, minRotation: 45 } 
-                        }
+                        y: { grid: { color: '#1f2937' }, ticks: { color: '#9ca3af' } },
+                        x: { grid: { display: false }, ticks: { color: '#9ca3af', maxRotation: 45, minRotation: 45 } }
+                    }
+                }
+            });
+
+            // PIE CHART
+            const ctxP = document.getElementById('pieChart').getContext('2d');
+            cPie = new Chart(ctxP, {
+                type: 'doughnut',
+                data: {
+                    labels: labels5,
+                    datasets: [{
+                        data: vals5,
+                        backgroundColor: ['#a855f7', '#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'right', labels: { color: '#d1d5db', usePointStyle: true, boxWidth: 8 } }
                     }
                 }
             });
         }
 
-        function applyFiltersAndSort() {
-            const query = document.getElementById('searchInput').value.toLowerCase();
-            filteredData = currentData;
-
-            if(query) {
-                filteredData = currentData.filter(row => {
-                    return Object.values(row).some(val => String(val).toLowerCase().includes(query));
-                });
-            }
-
-            if(currentSortCol) {
-                filteredData.sort((a, b) => {
-                    let valA = a[currentSortCol];
-                    let valB = b[currentSortCol];
-
-                    let numA = parseFloat(valA);
-                    let numB = parseFloat(valB);
-                    if(!isNaN(numA) && !isNaN(numB) && valA !== "" && valB !== "") {
-                        return currentSortAsc ? numA - numB : numB - numA;
-                    }
-
-                    valA = String(valA || '').toLowerCase();
-                    valB = String(valB || '').toLowerCase();
-                    if (valA < valB) return currentSortAsc ? -1 : 1;
-                    if (valA > valB) return currentSortAsc ? 1 : -1;
-                    return 0;
-                });
-            } else if(targetMetricCol && !query) {
-                // Default sort: highest score first
-                filteredData.sort((a, b) => {
-                    return parseFloat(b[targetMetricCol] || 0) - parseFloat(a[targetMetricCol] || 0);
-                });
-            }
-
-            renderTableHTML(filteredData);
-            if(!query) renderChart(filteredData); // update chart only if no search filter applied, or update it always? Up to design. Let's update it always.
-            renderChart(filteredData);
-        }
-
-        function renderTableHTML(data) {
+        function renderTable(data) {
             const thead = document.getElementById('tableHead');
             const tbody = document.getElementById('tableBody');
-            
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
+            thead.innerHTML = ''; tbody.innerHTML = '';
 
-            if(data.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td class="p-10 text-center text-gray-400" colspan="100%">
-                            <div class="flex flex-col items-center justify-center">
-                                <i data-lucide="search-x" class="w-12 h-12 text-gray-600 mb-3"></i>
-                                <p class="text-lg">Data tidak ditemukan.</p>
-                            </div>
-                        </td>
-                    </tr>`;
-                lucide.createIcons();
-                return;
-            }
+            if(data.length === 0) return;
 
-            // Exclude empty columns that might be left over
             const allKeys = Object.keys(data[0]);
-            // Only keep keys that actually have values in at least one row
             const keys = allKeys.filter(k => data.some(row => row[k] !== undefined && row[k] !== ""));
 
-            const trHead = document.createElement('tr');
-            
-            keys.forEach(key => {
+            const trH = document.createElement('tr');
+            keys.forEach(k => {
                 const th = document.createElement('th');
-                th.className = 'p-4 font-bold tracking-wide cursor-pointer hover:text-white hover:bg-gray-800 transition group select-none border-b border-gray-700';
-                
-                const flexDiv = document.createElement('div');
-                flexDiv.className = 'flex items-center gap-2';
-                
-                const span = document.createElement('span');
-                span.textContent = key;
-                flexDiv.appendChild(span);
-
-                if (currentSortCol === key) {
-                    const icon = document.createElement('i');
-                    icon.setAttribute('data-lucide', currentSortAsc ? 'arrow-up' : 'arrow-down');
-                    icon.className = 'w-4 h-4 text-purple-400';
-                    flexDiv.appendChild(icon);
-                } else {
-                    const icon = document.createElement('i');
-                    icon.setAttribute('data-lucide', 'arrow-up-down');
-                    icon.className = 'w-4 h-4 text-gray-600 opacity-0 group-hover:opacity-100 transition';
-                    flexDiv.appendChild(icon);
-                }
-
-                th.appendChild(flexDiv);
-                th.onclick = () => {
-                    if (currentSortCol === key) {
-                        currentSortAsc = !currentSortAsc;
-                    } else {
-                        currentSortCol = key;
-                        currentSortAsc = true;
-                    }
-                    applyFiltersAndSort();
-                };
-                trHead.appendChild(th);
+                th.className = 'p-5 font-bold tracking-wider text-gray-500';
+                th.textContent = k;
+                trH.appendChild(th);
             });
-            thead.appendChild(trHead);
+            thead.appendChild(trH);
 
-            data.forEach((row, index) => {
+            data.forEach((row, idx) => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-800/60 transition group relative';
-                
-                keys.forEach((key, colIndex) => {
+                tr.className = 'hover:bg-gray-800/40 transition relative';
+
+                keys.forEach(key => {
                     const td = document.createElement('td');
-                    td.className = 'p-4 relative z-10';
-                    
+                    td.className = 'p-5 relative z-10';
+
                     let rawVal = row[key];
                     let displayVal = rawVal;
                     let isNumeric = false;
 
-                    if (typeof rawVal === 'number') {
-                        displayVal = formatNumber(rawVal);
-                        isNumeric = true;
-                    } else if (typeof rawVal === 'string' && rawVal.trim() !== '' && !isNaN(rawVal)) {
+                    if (typeof rawVal === 'number') { displayVal = formatNumber(rawVal); isNumeric = true; }
+                    else if (typeof rawVal === 'string' && !isNaN(rawVal) && rawVal.trim()!=='') {
                         let parsed = parseFloat(rawVal);
-                        if (!isNaN(parsed)) {
-                            displayVal = formatNumber(parsed);
-                            isNumeric = true;
-                        }
+                        if (!isNaN(parsed)) { displayVal = formatNumber(parsed); isNumeric = true; }
                     }
 
-                    // Visual Progress Bar for Target Metric Column
-                    if(key === targetMetricCol && isNumeric && maxValueGlobal > 0) {
+                    // First Column: Country Name + Medals
+                    if(key === keys[0]) {
+                        let medal = '';
+                        if(idx === 0) medal = '<i data-lucide="medal" class="w-5 h-5 text-yellow-400 inline ml-3 animate-pulse"></i>';
+                        else if(idx === 1) medal = '<i data-lucide="medal" class="w-5 h-5 text-gray-300 inline ml-3"></i>';
+                        else if(idx === 2) medal = '<i data-lucide="medal" class="w-5 h-5 text-amber-600 inline ml-3"></i>';
+                        
+                        td.innerHTML = `<span class="font-medium text-gray-200">${displayVal}</span>${medal}`;
+                    }
+                    // Score Column: Progress Bar
+                    else if(key === targetMetricCol && isNumeric && maxValueGlobal > 0) {
                         const numVal = parseFloat(rawVal);
                         const percent = Math.min(100, Math.max(0, (numVal / maxValueGlobal) * 100));
                         
-                        // Progress Bar Background
-                        const bar = document.createElement('div');
-                        bar.className = 'absolute top-1 bottom-1 left-1 rounded bg-gradient-to-r from-purple-900/40 to-blue-900/40 -z-10 transition-all duration-700';
-                        bar.style.width = percent + '%';
-                        td.appendChild(bar);
-                        
-                        // Highlight text
-                        const textSpan = document.createElement('span');
-                        textSpan.className = 'font-mono font-bold text-white';
-                        textSpan.textContent = displayVal;
-                        td.appendChild(textSpan);
+                        td.innerHTML = `
+                            <div class="absolute inset-y-2 left-2 rounded bg-purple-600/30 -z-10 transition-all duration-1000" style="width: ${percent}%"></div>
+                            <span class="font-mono font-bold text-white pl-2">${displayVal}</span>
+                        `;
                     } else {
                         td.textContent = displayVal;
+                        td.className += ' text-gray-400';
                     }
-                    
                     tr.appendChild(td);
                 });
                 tbody.appendChild(tr);
             });
-
             lucide.createIcons();
         }
     </script>
