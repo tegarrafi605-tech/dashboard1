@@ -1,119 +1,5 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PISA - Eksplorasi Dataset</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- SheetJS -->
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #111827; }
-        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
-    </style>
-</head>
-<body class="bg-gray-950 text-gray-100 min-h-screen flex flex-col">
-
-    <main class="flex-1 p-6 md:p-10 max-w-[1400px] mx-auto w-full flex flex-col gap-8">
-        
-        <!-- HEADER ROW: TITLE & DUAL-DROPDOWN -->
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-gray-800 pb-6">
-            <div>
-                <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-white flex items-center gap-3">
-                    <i data-lucide="database" class="w-8 h-8 text-purple-500"></i> Eksplorasi Dataset
-                </h1>
-                <p class="text-gray-400 mt-2 text-sm" id="subtitleText">Memuat engine data...</p>
-            </div>
-            
-            <div class="flex items-center gap-3 bg-gray-900/50 p-2 rounded-xl border border-gray-800">
-                <div class="flex flex-col">
-                    <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 mb-1">Sumber Data</label>
-                    <select id="sumberData" onchange="fetchData()" class="bg-gray-800 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-48 p-2.5 outline-none border border-gray-700 cursor-pointer transition hover:bg-gray-700">
-                        <option value="DATA PISA MATEMATIKA1.xlsx">Matematika</option>
-                        <option value="3rlyb8.xlsx">Sains</option>
-                        <option value="toyp15.xlsx">Literasi</option>
-                    </select>
-                </div>
-                <div class="flex flex-col">
-                    <label class="text-[10px] text-gray-500 uppercase font-bold ml-1 mb-1">Tahun</label>
-                    <select id="tahunData" onchange="processWorkbook()" class="bg-gray-800 text-white text-sm rounded-lg focus:ring-purple-500 focus:border-purple-500 block w-32 p-2.5 outline-none border border-gray-700 cursor-pointer transition hover:bg-gray-700">
-                        <option value="2022">2022</option>
-                        <option value="2018">2018</option>
-                        <option value="2015">2015</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <!-- LOADING INDICATOR -->
-        <div id="loadingIndicator" class="hidden flex-col items-center justify-center py-20">
-            <i data-lucide="loader-2" class="w-10 h-10 text-purple-500 animate-spin mb-4"></i>
-            <p class="text-gray-400 font-medium tracking-wide animate-pulse">Menarik & Membersihkan Data...</p>
-        </div>
-
-        <!-- DASHBOARD CONTENT -->
-        <div id="dashboardContent" class="hidden flex-col gap-8">
-            
-            <!-- CHARTS SECTION -->
-            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <!-- Line Chart -->
-                <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-lg">
-                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <i data-lucide="trending-up" class="w-4 h-4 text-purple-400"></i> Tren Skor (Top 10)
-                    </h3>
-                    <div class="w-full h-64"><canvas id="lineChart"></canvas></div>
-                </div>
-                <!-- Pie Chart -->
-                <div class="bg-gray-900 p-6 rounded-2xl border border-gray-800 shadow-lg">
-                    <h3 class="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                        <i data-lucide="pie-chart" class="w-4 h-4 text-blue-400"></i> Distribusi Top 5 Negara
-                    </h3>
-                    <div class="w-full h-64"><canvas id="pieChart"></canvas></div>
-                </div>
-            </div>
-
-            <!-- TABLE SECTION -->
-            <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden shadow-xl flex flex-col relative">
-                <div class="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
-                    <i data-lucide="table" class="w-32 h-32"></i>
-                </div>
-                <div class="overflow-x-auto max-h-[600px] overflow-y-auto z-10">
-                    <table class="w-full text-left border-collapse whitespace-nowrap">
-                        <thead class="bg-gray-950/80 backdrop-blur-md text-gray-400 text-xs uppercase sticky top-0 z-20 shadow-md border-b border-gray-800" id="tableHead">
-                            <!-- Generated -->
-                        </thead>
-                        <tbody class="text-sm divide-y divide-gray-800/60" id="tableBody">
-                            <!-- Generated -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-    </main>
-
-    <script>
-        let workbookCache = null;
-        let currentFileName = null;
-        let targetMetricCol = null;
-        let maxValueGlobal = 0;
-        let cLine = null;
-        let cPie = null;
-
-        document.addEventListener('DOMContentLoaded', () => {
-            lucide.createIcons();
-            fetchData();
-        });
-
         async function fetchData() {
+            // Karena UI/Path sudah Anda set terpisah, kita langsung tarik fileName dari UI
             const fileName = document.getElementById('sumberData').value;
             
             document.getElementById('loadingIndicator').classList.remove('hidden');
@@ -121,20 +7,20 @@
             document.getElementById('dashboardContent').classList.add('hidden');
 
             try {
-                // Fetch only if file changed
-                if(currentFileName !== fileName || !workbookCache) {
-                    const response = await fetch(fileName);
-                    if (!response.ok) throw new Error("File tidak ditemukan");
-                    const arrayBuffer = await response.arrayBuffer();
-                    workbookCache = XLSX.read(arrayBuffer, { type: 'array' });
-                    currentFileName = fileName;
-                }
+                // Fetch file selalu dieksekusi agar menjamin data ter-refresh sempurna
+                // (Menghapus cache checking agar "nyangkut" di data lama tidak terjadi)
+                const response = await fetch(fileName);
+                if (!response.ok) throw new Error("File tidak ditemukan");
                 
+                const arrayBuffer = await response.arrayBuffer();
+                workbookCache = XLSX.read(arrayBuffer, { type: 'array' });
+                
+                // Langsung proses data
                 processWorkbook();
 
             } catch(e) {
                 console.error(e);
-                alert("Gagal memuat " + fileName + ". Pastikan file Excel tersedia.");
+                alert("Gagal memuat " + fileName + ". Pastikan path file benar dan tersedia.");
                 document.getElementById('loadingIndicator').classList.remove('flex');
                 document.getElementById('loadingIndicator').classList.add('hidden');
             }
@@ -142,42 +28,14 @@
 
         function processWorkbook() {
             if(!workbookCache) return;
-            const targetYear = document.getElementById('tahunData').value;
             const categoryName = document.getElementById('sumberData').options[document.getElementById('sumberData').selectedIndex].text;
             
-            let selectedSheet = null;
-            let validSheets = [];
-
-            for(let i=0; i<workbookCache.SheetNames.length; i++) {
-                let sName = workbookCache.SheetNames[i];
-                if(sName.toLowerCase() === 'toc') continue;
-
-                let worksheet = workbookCache.Sheets[sName];
-                let raw = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-                
-                let hasNumbers = false;
-                for(let j=0; j<Math.min(20, raw.length); j++) {
-                    let keys = Object.keys(raw[j]);
-                    for(let k of keys) {
-                        if(typeof raw[j][k] === 'number') {
-                            hasNumbers = true;
-                            break;
-                        }
-                    }
-                    if(hasNumbers) break;
-                }
-                
-                if(hasNumbers) {
-                    validSheets.push(sName);
-                }
-            }
-
-            if(validSheets.length > 0) {
-                selectedSheet = validSheets[0]; // Ambil langsung sheet valid pertama
-            }
+            // DIRECT DATA ACCESS: Secara paksa & otomatis ambil Sheet Index ke-0 (Sheet Pertama)
+            // Mengabaikan nama sheet sama sekali agar file Sains/Literasi bisa langsung terbuka.
+            const selectedSheet = workbookCache.SheetNames[0];
 
             if(!selectedSheet) {
-                alert(`Tidak ada data angka yang valid di dalam file ${categoryName}.`);
+                alert(`Tidak ada sheet yang valid di dalam file ${categoryName}.`);
                 document.getElementById('loadingIndicator').classList.add('hidden');
                 document.getElementById('dashboardContent').classList.add('hidden');
                 document.getElementById('subtitleText').innerHTML = `<span class="text-red-400">Data tidak tersedia.</span>`;
@@ -189,7 +47,7 @@
             const worksheet = workbookCache.Sheets[selectedSheet];
             let rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-            // Detect Metric Column
+            // DETEKSI KOLOM SKOR OTOMATIS
             targetMetricCol = null;
             if(rawData.length > 0) {
                 const keys = Object.keys(rawData[0]);
@@ -209,7 +67,7 @@
                 });
             }
 
-            // STRICT GARBAGE FILTERING
+            // CLEAN MAPPING & STRICT GARBAGE FILTERING
             let cleanData = [];
             if(rawData.length > 0 && targetMetricCol) {
                 const countryKey = Object.keys(rawData[0])[0];
@@ -219,28 +77,28 @@
                     
                     if(!countryVal || valL === 'undefined' || valL === 'null') return false;
                     
-                    // Filter kata sampah
+                    // Buang baris yang bukan negara (Teks judul, TOC, dll)
                     const garbages = ['table', 'toc', 'note', 'figure', 'empty', 'unknown', 'oecd average', 'oecd', 'partners', 'mean'];
                     if(garbages.some(g => valL.includes(g))) return false;
                     if(countryVal.length > 40) return false;
 
-                    // Harus ada angka valid di skor
+                    // Buang baris jika kolom skornya tidak berisi angka
                     const metricVal = row[targetMetricCol];
                     if(metricVal === "" || isNaN(parseFloat(metricVal))) return false;
                     
-                    return true;
+                    return true; // Hanya loloskan Negara dan Angka Riil
                 });
             }
 
-            // Sort Descending by default
+            // Urutkan data dari terbesar ke terkecil
             cleanData.sort((a, b) => parseFloat(b[targetMetricCol]) - parseFloat(a[targetMetricCol]));
 
-            // Max Value for progress bar
             maxValueGlobal = 0;
             if(cleanData.length > 0) {
                 maxValueGlobal = parseFloat(cleanData[0][targetMetricCol]);
             }
 
+            // REFRESH TOTAL: Gambar ulang grafik dan tabel secara real-time
             renderCharts(cleanData);
             renderTable(cleanData);
 
@@ -249,151 +107,3 @@
             document.getElementById('dashboardContent').classList.remove('hidden');
             document.getElementById('dashboardContent').classList.add('flex');
         }
-
-        function formatNumber(num) {
-            if(typeof num !== 'number') return num;
-            return (num % 1 !== 0) ? num.toFixed(1) : num;
-        }
-
-        function renderCharts(data) {
-            if(cLine) cLine.destroy();
-            if(cPie) cPie.destroy();
-
-            if(data.length === 0 || !targetMetricCol) return;
-
-            const countryKey = Object.keys(data[0])[0];
-            const top10 = data.slice(0, 10);
-            const top5 = data.slice(0, 5);
-
-            const labels10 = top10.map(r => r[countryKey]);
-            const vals10 = top10.map(r => parseFloat(r[targetMetricCol]));
-
-            const labels5 = top5.map(r => r[countryKey]);
-            const vals5 = top5.map(r => parseFloat(r[targetMetricCol]));
-
-            // LINE CHART
-            const ctxL = document.getElementById('lineChart').getContext('2d');
-            
-            let gradL = ctxL.createLinearGradient(0, 0, 0, 400);
-            gradL.addColorStop(0, 'rgba(168, 85, 247, 0.4)');
-            gradL.addColorStop(1, 'rgba(168, 85, 247, 0)');
-
-            cLine = new Chart(ctxL, {
-                type: 'line',
-                data: {
-                    labels: labels10,
-                    datasets: [{
-                        label: 'Skor',
-                        data: vals10,
-                        borderColor: '#a855f7', // purple-500
-                        backgroundColor: gradL,
-                        borderWidth: 3,
-                        pointBackgroundColor: '#fff',
-                        pointBorderColor: '#a855f7',
-                        pointBorderWidth: 2,
-                        pointRadius: 4,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { grid: { color: '#1f2937' }, ticks: { color: '#9ca3af' } },
-                        x: { grid: { display: false }, ticks: { color: '#9ca3af', maxRotation: 45, minRotation: 45 } }
-                    }
-                }
-            });
-
-            // PIE CHART
-            const ctxP = document.getElementById('pieChart').getContext('2d');
-            cPie = new Chart(ctxP, {
-                type: 'doughnut',
-                data: {
-                    labels: labels5,
-                    datasets: [{
-                        data: vals5,
-                        backgroundColor: ['#a855f7', '#8b5cf6', '#6366f1', '#3b82f6', '#0ea5e9'],
-                        borderWidth: 0,
-                        hoverOffset: 10
-                    }]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: false,
-                    cutout: '65%',
-                    plugins: {
-                        legend: { position: 'right', labels: { color: '#d1d5db', usePointStyle: true, boxWidth: 8 } }
-                    }
-                }
-            });
-        }
-
-        function renderTable(data) {
-            const thead = document.getElementById('tableHead');
-            const tbody = document.getElementById('tableBody');
-            thead.innerHTML = ''; tbody.innerHTML = '';
-
-            if(data.length === 0) return;
-
-            const allKeys = Object.keys(data[0]);
-            const keys = allKeys.filter(k => data.some(row => row[k] !== undefined && row[k] !== ""));
-
-            const trH = document.createElement('tr');
-            keys.forEach(k => {
-                const th = document.createElement('th');
-                th.className = 'p-5 font-bold tracking-wider text-gray-500';
-                th.textContent = k;
-                trH.appendChild(th);
-            });
-            thead.appendChild(trH);
-
-            data.forEach((row, idx) => {
-                const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-800/40 transition relative';
-
-                keys.forEach(key => {
-                    const td = document.createElement('td');
-                    td.className = 'p-5 relative z-10';
-
-                    let rawVal = row[key];
-                    let displayVal = rawVal;
-                    let isNumeric = false;
-
-                    if (typeof rawVal === 'number') { displayVal = formatNumber(rawVal); isNumeric = true; }
-                    else if (typeof rawVal === 'string' && !isNaN(rawVal) && rawVal.trim()!=='') {
-                        let parsed = parseFloat(rawVal);
-                        if (!isNaN(parsed)) { displayVal = formatNumber(parsed); isNumeric = true; }
-                    }
-
-                    // First Column: Country Name + Medals
-                    if(key === keys[0]) {
-                        let medal = '';
-                        if(idx === 0) medal = '<i data-lucide="medal" class="w-5 h-5 text-yellow-400 inline ml-3 animate-pulse"></i>';
-                        else if(idx === 1) medal = '<i data-lucide="medal" class="w-5 h-5 text-gray-300 inline ml-3"></i>';
-                        else if(idx === 2) medal = '<i data-lucide="medal" class="w-5 h-5 text-amber-600 inline ml-3"></i>';
-                        
-                        td.innerHTML = `<span class="font-medium text-gray-200">${displayVal}</span>${medal}`;
-                    }
-                    // Score Column: Progress Bar
-                    else if(key === targetMetricCol && isNumeric && maxValueGlobal > 0) {
-                        const numVal = parseFloat(rawVal);
-                        const percent = Math.min(100, Math.max(0, (numVal / maxValueGlobal) * 100));
-                        
-                        td.innerHTML = `
-                            <div class="absolute inset-y-2 left-2 rounded bg-purple-600/30 -z-10 transition-all duration-1000" style="width: ${percent}%"></div>
-                            <span class="font-mono font-bold text-white pl-2">${displayVal}</span>
-                        `;
-                    } else {
-                        td.textContent = displayVal;
-                        td.className += ' text-gray-400';
-                    }
-                    tr.appendChild(td);
-                });
-                tbody.appendChild(tr);
-            });
-            lucide.createIcons();
-        }
-    </script>
-</body>
-</html>
