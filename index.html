@@ -354,18 +354,39 @@
             const allKeys = Object.keys(data[0]);
             const keys = allKeys.filter(k => data.some(row => row[k] !== undefined && row[k] !== ""));
 
-            const trH = document.createElement('tr');
+            // Hitung nilai maksimum tiap kolom untuk kalkulasi persentase bar
+            let maxVals = {};
             keys.forEach(k => {
+                maxVals[k] = 0;
+                data.forEach(row => {
+                    let val = parseFloat(row[k]);
+                    if(!isNaN(val) && val > maxVals[k]) maxVals[k] = val;
+                });
+            });
+
+            // Palet warna untuk progress bar (Berganti warna tiap kolom)
+            const barColors = ['bg-purple-500', 'bg-pink-500', 'bg-blue-500', 'bg-emerald-500', 'bg-amber-500'];
+            let numColIndex = 0;
+            let colColorMap = {};
+
+            const trH = document.createElement('tr');
+            keys.forEach((k, idx) => {
                 const th = document.createElement('th');
-                th.className = 'p-5 font-bold tracking-wider text-gray-500';
+                th.className = 'p-5 font-bold tracking-wider text-indigo-200/70 text-xs uppercase';
                 th.textContent = k;
                 trH.appendChild(th);
+                
+                // Petakan warna jika kolom ini berisi angka
+                if(idx > 0 && maxVals[k] > 0) {
+                    colColorMap[k] = barColors[numColIndex % barColors.length];
+                    numColIndex++;
+                }
             });
             thead.appendChild(trH);
 
             data.forEach((row, idx) => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-gray-800/40 transition relative';
+                tr.className = 'hover:bg-gray-800/40 transition relative border-b border-gray-800/50';
 
                 keys.forEach(key => {
                     const td = document.createElement('td');
@@ -374,34 +395,45 @@
                     let rawVal = row[key];
                     let displayVal = rawVal;
                     let isNumeric = false;
+                    let numVal = 0;
 
-                    if (typeof rawVal === 'number') { displayVal = formatNumber(rawVal); isNumeric = true; }
-                    else if (typeof rawVal === 'string' && !isNaN(rawVal) && rawVal.trim()!=='') {
+                    if (typeof rawVal === 'number') { displayVal = formatNumber(rawVal); isNumeric = true; numVal = rawVal; }
+                    else if (typeof rawVal === 'string' && !isNaN(parseFloat(rawVal)) && rawVal.trim()!=='') {
                         let parsed = parseFloat(rawVal);
-                        if (!isNaN(parsed)) { displayVal = formatNumber(parsed); isNumeric = true; }
+                        if (!isNaN(parsed)) { displayVal = formatNumber(parsed); isNumeric = true; numVal = parsed; }
                     }
 
-                    // First Column: Country Name + Medals
+                    // Tambahkan simbol % secara pintar jika ada indikasi persen di header
+                    if(isNumeric && String(displayVal).indexOf('%') === -1 && (key.toLowerCase().includes('%') || key.toLowerCase().includes('persen'))) {
+                        displayVal = displayVal + '%';
+                    }
+
+                    // Kolom Pertama: Nama Negara + Medali di Kiri
                     if(key === keys[0]) {
                         let medal = '';
-                        if(idx === 0) medal = '<i data-lucide="medal" class="w-5 h-5 text-yellow-400 inline ml-3 animate-pulse"></i>';
-                        else if(idx === 1) medal = '<i data-lucide="medal" class="w-5 h-5 text-gray-300 inline ml-3"></i>';
-                        else if(idx === 2) medal = '<i data-lucide="medal" class="w-5 h-5 text-amber-600 inline ml-3"></i>';
+                        if(idx === 0) medal = '<i data-lucide="medal" class="w-5 h-5 text-yellow-500 mr-3"></i>';
+                        else if(idx === 1) medal = '<i data-lucide="medal" class="w-5 h-5 text-gray-400 mr-3"></i>';
+                        else if(idx === 2) medal = '<i data-lucide="medal" class="w-5 h-5 text-amber-600 mr-3"></i>';
+                        else medal = '<div class="w-5 h-5 mr-3 inline-block"></div>'; // Spacer agar teks sejajar rapi
                         
-                        td.innerHTML = `<span class="font-medium text-gray-200">${displayVal}</span>${medal}`;
+                        td.innerHTML = `<div class="flex items-center"><span class="font-extrabold text-white flex items-center">${medal} ${displayVal}</span></div>`;
                     }
-                    // Score Column: Progress Bar
-                    else if(key === targetMetricCol && isNumeric && maxValueGlobal > 0) {
-                        const numVal = parseFloat(rawVal);
-                        const percent = Math.min(100, Math.max(0, (numVal / maxValueGlobal) * 100));
+                    // Kolom Angka: Angka + Inline Progress Bar
+                    else if(isNumeric && maxVals[key] > 0) {
+                        const percent = Math.min(100, Math.max(0, (numVal / maxVals[key]) * 100));
+                        const barColor = colColorMap[key];
                         
                         td.innerHTML = `
-                            <div class="absolute inset-y-2 left-2 rounded bg-purple-600/30 -z-10 transition-all duration-1000" style="width: ${percent}%"></div>
-                            <span class="font-mono font-bold text-white pl-2">${displayVal}</span>
+                            <div class="flex items-center gap-3">
+                                <span class="font-bold text-white text-base w-16">${displayVal}</span>
+                                <div class="w-24 h-2 bg-gray-800 rounded-full overflow-hidden flex-shrink-0">
+                                    <div class="h-full ${barColor} rounded-full transition-all duration-1000" style="width: ${percent}%"></div>
+                                </div>
+                            </div>
                         `;
                     } else {
-                        td.textContent = displayVal;
-                        td.className += ' text-gray-400';
+                        // Kolom Teks Biasa
+                        td.innerHTML = `<span class="font-bold text-gray-400">${displayVal}</span>`;
                     }
                     tr.appendChild(td);
                 });
