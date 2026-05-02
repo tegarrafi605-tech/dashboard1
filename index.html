@@ -193,7 +193,7 @@
                 return;
             }
 
-            document.getElementById('subtitleText').innerHTML = `Menampilkan data <span class="font-bold text-white">${categoryName}</span> dari Sheet: <span class="text-purple-400 font-mono">${selectedSheet}</span>`;
+            document.getElementById('subtitleText').innerHTML = `Menampilkan data <span class="font-bold text-white">${categoryName}</span> dari File: <span class="text-purple-400 font-mono">${categoryName}</span>`;
 
             const worksheet = workbookCache.Sheets[selectedSheet];
             let rawData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
