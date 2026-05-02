@@ -145,19 +145,54 @@
             const targetYear = document.getElementById('tahunData').value;
             const categoryName = document.getElementById('sumberData').options[document.getElementById('sumberData').selectedIndex].text;
             
-            // Skenario 1: Otomatis mencari Sheet yang memuat angka Tahun
-            let selectedSheet = null;
+            // 1. Kumpulkan semua sheet yang valid (yang memiliki data angka riil)
+            let validSheets = [];
             for(let i=0; i<workbookCache.SheetNames.length; i++) {
                 let sName = workbookCache.SheetNames[i];
-                // Cek apakah nama sheet mengandung angka tahun (contoh: '2022' atau 'Matematika_2022')
-                if(sName.includes(targetYear)) {
-                    selectedSheet = sName;
-                    break;
+                if(sName.toLowerCase() === 'toc' || sName.toLowerCase() === 'cover') continue;
+
+                let worksheet = workbookCache.Sheets[sName];
+                let raw = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                
+                let hasNumbers = false;
+                // Cek cepat 20 baris pertama apakah ada angka
+                for(let j=0; j<Math.min(20, raw.length); j++) {
+                    let keys = Object.keys(raw[j]);
+                    for(let k of keys) {
+                        if(typeof raw[j][k] === 'number') {
+                            hasNumbers = true;
+                            break;
+                        }
+                    }
+                    if(hasNumbers) break;
+                }
+                
+                if(hasNumbers) {
+                    validSheets.push(sName);
                 }
             }
 
+            // 2. Trik Pemetaan Tahun ke Urutan Sheet (Persis seperti web Piyalyze)
+            // Asumsi bawaan: 2022 = Sheet 1, 2018 = Sheet 2, 2015 = Sheet 3
+            let selectedSheet = null;
+            if(targetYear === "2022" && validSheets.length > 0) selectedSheet = validSheets[0];
+            else if(targetYear === "2018" && validSheets.length > 1) selectedSheet = validSheets[1];
+            else if(targetYear === "2015" && validSheets.length > 2) selectedSheet = validSheets[2];
+
+            // 3. Fallback Cerdas: Jika trik urutan gagal (misal file hanya punya 1 sheet), 
+            // coba cari apakah ada sheet yang namanya memuat angka tahun tersebut
             if(!selectedSheet) {
-                alert(`Sheet untuk tahun ${targetYear} tidak ditemukan di dalam file ${categoryName}. Pastikan Anda telah memberi nama sheet dengan angka tahun tersebut (contoh: '2022').`);
+                for(let i=0; i<validSheets.length; i++) {
+                    if(validSheets[i].includes(targetYear)) {
+                        selectedSheet = validSheets[i];
+                        break;
+                    }
+                }
+            }
+
+            // Jika benar-benar tidak ditemukan baik dari urutan maupun nama
+            if(!selectedSheet) {
+                alert(`Data untuk tahun ${targetYear} tidak ditemukan di dalam file ${categoryName}.`);
                 document.getElementById('loadingIndicator').classList.add('hidden');
                 document.getElementById('dashboardContent').classList.add('hidden');
                 document.getElementById('subtitleText').innerHTML = `<span class="text-red-400">Data Tahun ${targetYear} tidak tersedia.</span>`;
